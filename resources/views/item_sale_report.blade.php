@@ -33,7 +33,7 @@
                     <form action="{{ URL('/ItemSaleReport1') }}" method="post" name="form1" id="form1">
                         <div class="card-body">
                             @csrf
-                            <div class="row">
+                            {{-- <div class="row">
                                 <div class="col-md-4">
                                     <label class="col-form-label" for="email-id">From Date</label>
                                     <div class="input-group" id="datepicker21">
@@ -44,8 +44,8 @@
                                         <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row">
+                            </div> --}}
+                            {{-- <div class="row">
                                 <div class="col-md-4">
                                     <label class="col-form-label" for="email-id">To Date</label>
                                     <div class="input-group" id="datepicker22">
@@ -56,7 +56,7 @@
                                         <span class="input-group-text"><i class="mdi mdi-calendar"></i></span>
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div class="row">
                                 <div class="col-4">
                                     <label class="col-form-label" for="email-id">Item</label>

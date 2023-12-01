@@ -4,16 +4,16 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-    <title>Item Sales Report</title>
+    <title>Item Report</title>
 </head>
 
 <body>
     <div align="center">
         <h3 class="text-capitalize">{{ $company->Name }}</h3>
-        <p><strong>Item Sales Report</strong></p>
+        <p><strong>Item Report</strong></p>
 
         <table width="100%" cellspacing="0" cellpadding="0">
-            <tr>
+            {{-- <tr>
                 <td>
                     <div align="left"><strong>From: {{ request()->StartDate }} TO: {{ request()->EndDate }} </strong></div>
                 </td>
@@ -21,7 +21,7 @@
                     <div align="right"><strong>Remianing Stock: {{ $remaining_stock }}</strong></div>
                 </td>
             </tr>
-            <br>
+            <br> --}}
             <tr>
                 @if ($item_name != null)
                     <td>
@@ -30,9 +30,12 @@
                 @endif
                 @if ($item_code != null)
                     <td>
-                        <div align="right"><strong>Item Code: {{ $item_code }} </strong></div>
+                        <div align="center"><strong>Item Code: {{ $item_code }} </strong></div>
                     </td>
                 @endif
+                <td>
+                    <div align="right"><strong>Remianing Stock: {{ $remaining_stock }}</strong></div>
+                </td>
             </tr>
         </table>
         <hr>

@@ -17,7 +17,7 @@
                         <div class="page-title-box d-print-block d-sm-flex align-items-center justify-content-between">
                             <h4 class="mb-sm-0 font-size-18">Item Report</h4>
                             <strong class="text-end">{{ session::get('CompanyName') }}</strong>
-                            From {{ request()->StartDate }} to {{ request()->EndDate }}
+                            {{-- From {{ request()->StartDate }} to {{ request()->EndDate }} --}}
 
                         </div>
                     </div>

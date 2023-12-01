@@ -99,6 +99,8 @@
                         <li><a href="{{ URL('/ItemReport') }}" key="t-products">Item Report</a></li>
                         <li><a href="{{ URL('/ExpenseReport') }}" key="t-products">Expense Report</a></li>
                         <li><a href="{{ URL('/DailyIncomeExpense') }}" key="t-products">Daily Income/Expense</a></li>
+                        <li><a href="{{ URL('/VatReport') }}" key="t-products">VAT Report</a></li>
+                        <li><a href="{{ URL('/ItemsPurchaseReport') }}" key="t-products">Items Purchase Report</a></li>
                     </ul>
                 </li>
                 <li>

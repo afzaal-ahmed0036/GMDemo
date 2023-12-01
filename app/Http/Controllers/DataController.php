@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\InvoiceMaster;
 use App\Models\Item;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -97,8 +98,8 @@ class DataController extends Controller
                 $query->where('sale_status', '!=', 10)
                     ->orWhereNull('sale_status');
             })
-                ->whereDate('Date', '>=', $request->StartDate)
-                ->whereDate('Date', '<=', $request->EndDate)
+                // ->whereDate('Date', '>=', $request->StartDate)
+                // ->whereDate('Date', '<=', $request->EndDate)
                 ->when($request->item_id != null, function ($query) use ($request) {
                     $query->whereHas('invoiceDetails', function ($subquery) use ($request) {
                         $subquery->where('ItemID', $request->item_id)
@@ -158,8 +159,8 @@ class DataController extends Controller
                 $query->where('sale_status', '!=', 10)
                     ->orWhereNull('sale_status');
             })
-                ->whereDate('Date', '>=', $request->StartDate)
-                ->whereDate('Date', '<=', $request->EndDate)
+                // ->whereDate('Date', '>=', $request->StartDate)
+                // ->whereDate('Date', '<=', $request->EndDate)
                 ->when($request->item_id != null, function ($query) use ($request) {
                     $query->whereHas('invoiceDetails', function ($subquery) use ($request) {
                         $subquery->where('ItemID', $request->item_id)
@@ -241,5 +242,40 @@ class DataController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
         }
+    }
+    public function VatReport(){
+        $pagetitle = 'VAT Report';
+        return view('reports.vatReport', compact('pagetitle'));
+    }
+    public function VatReportPDF(Request $request){
+        try {
+            $invoice_masters = InvoiceMaster::whereDate('Date','>=' , $request->StartDate)
+            ->whereDate('Date','<=' , $request->EndDate)
+            ->where('sale_status', '!=', 10)
+            ->where('partyID', '!=', null)
+            ->with('party')
+            ->get();
+            $company = Company::first();
+            $startDate = $request->StartDate;
+            $endDate = $request->EndDate;
+
+            // dd($invoice_masters);
+            $pdf = PDF::loadView('reports.vatReportPDF', compact('invoice_masters', 'company', 'startDate', 'endDate'));
+            // return $pdf->download('pdfview.pdf');
+            $pdf->setpaper('A4', 'portiate');
+            return $pdf->stream();
+            // return view('teq-invoice.dailyTransactions', compact('invoice_masters'));
+        } catch (\Exception $e) {
+            //throw $th;
+            // dd('here');
+            // DB::rollBack();
+            return back()->with('message', $e->getMessage());
+        }
+        // dd($request->all());
+    }
+    public function ItemsPurchaseReport()
+    {
+        $items = Item::all();
+        return view('item_purchase_report_view', compact('items'));
     }
 }

@@ -250,6 +250,10 @@ class VoucherController extends Controller
 
                 $lims_customer_data = DB::table('party')->where('PartyID', $data['customer_id'])->first();
                 $remaining_balance = $request->paying_amount -  $request->paid_amount;
+                if ($data['sale_status'] == 3) {
+                    $remaining_balance = $request->future_paying_amount -  $request->future_paid_amount;
+                    $data['paid_by_id'] = $data['future_paid_by_id'];
+                }
                 $paying_method = match ($data['paid_by_id']) {
                     '1' => 'Cash',
                     '2' => 'Gift Card',
@@ -264,9 +268,7 @@ class VoucherController extends Controller
                     default => 'Deposit'
                 };
 
-                if ($data['sale_status'] == 3) {
-                    $remaining_balance = $request->future_paying_amount -  $request->future_paid_amount;
-                }
+
 
                 if ($request->biller_id)
                     $biller_id = $request->biller_id;

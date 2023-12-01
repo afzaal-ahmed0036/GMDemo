@@ -507,9 +507,9 @@
                                                     class="form-control numkey" step="any">
                                             </div>
                                             <div class="col-md-6 mt-1">
-                                                <input type="hidden" name="paid_by_id">
+                                                <input type="hidden" name="future_paid_by_id" id="future_paid_by_id">
                                                 <label>{{ trans('file.Paid By') }}</label>
-                                                <select name="paid_by_id_select" class="form-control selectpicker">
+                                                <select name="future_paid_by_id_select" class="form-control selectpicker" id="future_paid_by_id_select">
                                                     <option value="1">Cash</option>
                                                     <option value="4">Card</option>
                                                     <option value="6">Cash And Card</option>
@@ -2583,6 +2583,7 @@
         $("#future-submit-btn").on("click", function() {
             // alert('here');
             selectedservingType = $("input[name='servingType']:checked").val();
+            $('#future_paid_by_id').val($('#future_paid_by_id_select').val());
             var deliveryAddress = $("input[name='DeliveryAddress']").val();
             selectedState = $('#delivery_state_shipping').val();
             var driverName = $("input[name='driverName']").val();
@@ -3503,6 +3504,7 @@
                 e.preventDefault();
             }
             $('input[name="paid_by_id"]').val($('select[name="paid_by_id_select"]').val());
+            $('input[name="future_paid_by_id"]').val($('select[name="future_paid_by_id_select"]').val());
             $('input[name="order_tax_rate"]').val($('select[name="order_tax_rate_select"]').val());
             $('input[name="order_tax_id"]').val($('#order-tax-rate-select').children('option:selected').data('id'));
         });

@@ -765,4 +765,8 @@ Route::group(['middleware' => ['CheckAdmin']], function () {
     Route::get('/ItemReport/', [DataController::class, 'ItemSaleReport']);
     Route::post('/ItemReportView/', [DataController::class, 'ItemSaleReport1']);
     Route::post('/ItemReportPDF/', [DataController::class, 'ItemSaleReportPDF']);
+    Route::get('VatReport', [DataController::class, 'VatReport']);
+    Route::post('VatReportPDF', [DataController::class, 'VatReportPDF']);
+    Route::get('/ItemsPurchaseReport/', [DataController::class, 'ItemsPurchaseReport']);
+
 });
