@@ -5,22 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Coupon;
 use Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Keygen;
-use DB;
-use Session; 
-use Carbon\Carbon;
 class CouponController extends Controller
 {
     public function index()
-    { 
+    {
         $lims_coupon_all = Coupon::where('is_active', true)->orderBy('id', 'desc')->get();
         $parties = DB::table('party')->get();
-        return view('coupon.index', compact('lims_coupon_all','parties')); 
-    }
-
-    public function create()
-    {
-        //
+        return view('coupon.index', compact('lims_coupon_all','parties'));
     }
 
     public function generateCode()
@@ -31,13 +25,13 @@ class CouponController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->all();  
-        // $data['expired_date'] = Carbon::createFromFormat('m/d/Y', $data['expired_date'])->format('Y-m-d'); 
+        $data = $request->all();
+        // $data['expired_date'] = Carbon::createFromFormat('m/d/Y', $data['expired_date'])->format('Y-m-d');
         $data['used'] = 0;
         $data['user_id'] = Session::get('UserID');
         $data['is_active'] = true;
         Coupon::create($data);
-        return redirect('coupons')->with('error', 'Coupon created Successfully')->with('class', 'success');
+        return redirect('coupons')->with('success', 'Coupon created Successfully');
     }
 
 
@@ -58,7 +52,7 @@ class CouponController extends Controller
             $data['minimum_amount'] = 0;
         $lims_coupon_data = Coupon::find($data['coupon_id']);
         $lims_coupon_data->update($data);
-        return redirect('coupons')->with('error', 'Coupon updated Successfully')->with('class', 'success');
+        return redirect('coupons')->with('success', 'Coupon updated Successfully');
     }
 
     public function deleteBySelection(Request $request)
@@ -77,6 +71,6 @@ class CouponController extends Controller
         $lims_coupon_data = Coupon::find($id);
         $lims_coupon_data->is_active = false;
         $lims_coupon_data->save();
-        return redirect('coupons')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('coupons')->with('success', 'Deleted Successfully');
     }
 }

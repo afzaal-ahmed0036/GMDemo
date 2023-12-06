@@ -55,7 +55,7 @@ class BillController extends Controller
             $lims_pos_setting_data = PosSetting::latest()->first();
             return view('purchase.bill_create', compact('supplier',  'items', 'user', 'vhno', 'item', 'items', 'pagetitle', 'tax', 'lims_warehouse_list', 'lims_pos_setting_data'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -213,11 +213,11 @@ class BillController extends Controller
                 Journal::create($data_cash_bank);
             }
             DB::commit();
-            return redirect('Bill')->with('error', 'Invoice Saved')->with('class', 'success');
+            return redirect('Bill')->with('success', 'Invoice Saved')->with('class', 'success');
         } catch (\Exception $e) {
             DB::rollBack();
             // dd($e->getMessage());
-            return back()->with('error', $e->getMessage())->with('class', 'danger')->withInput();
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 
@@ -232,7 +232,7 @@ class BillController extends Controller
             $company = Company::all();
             $invoice_master = DB::table('v_invoice_master_supplier')->where('InvoiceMasterID', $id)->first();
             if (!$invoice_master) {
-                return back()->with('error','Data Not Found')->with('class', 'danger');
+                return back()->with('error','Data Not Found');
             }
             $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
             $item = json_encode($items);
@@ -241,7 +241,7 @@ class BillController extends Controller
             $user = User::all();
             return view('purchase.bill_view', compact('invoice_type', 'items', 'supplier', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'company'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -253,7 +253,7 @@ class BillController extends Controller
             $company = Company::all();
             $invoice_master = DB::table('v_invoice_master_supplier')->where('InvoiceMasterID', $id)->first();
             if (!$invoice_master) {
-                return back()->with('error','Data Not Found')->with('class', 'danger');
+                return back()->with('error','Data Not Found');
             }
             $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
             $party = Party::all();
@@ -262,7 +262,7 @@ class BillController extends Controller
             // return view('sale_invoice_view_pdf', compact('invoice_type', 'items', 'party', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'company'));
         } catch (\Exception $e) {
             // dd($e->getMessage());
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -277,7 +277,7 @@ class BillController extends Controller
             $tax = DB::table('tax')->get();
             $invoice_master = DB::table('v_invoice_master_supplier')->where('InvoiceMasterID', $id)->first();
             if (!$invoice_master) {
-                return back()->with('error','Data Not Found')->with('class', 'danger');
+                return back()->with('error','Data Not Found');
             }
             $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
             $item = json_encode($items);
@@ -286,7 +286,7 @@ class BillController extends Controller
             $lims_warehouse_list = Warehouse::where('is_active', true)->get();
             return view('purchase.bill_edit', compact('invoice_type', 'items', 'supplier', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'tax', 'lims_warehouse_list'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
     public function BillUpdate(Request $request)
@@ -436,10 +436,10 @@ class BillController extends Controller
                 Journal::create($data_cash_bank);
             }
             DB::commit();
-            return redirect('Bill')->with('error', 'Invoice Saved')->with('class', 'success');
+            return redirect('Bill')->with('success', 'Invoice Saved')->with('class', 'success');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
     public function BillDelete($id)
@@ -451,10 +451,10 @@ class BillController extends Controller
             InvoiceDetail::where('InvoiceMasterID', $id)->delete();
             Journal::where('InvoiceMasterID', $id)->delete();
             DB::commit();
-            return redirect('Bill')->with('error', 'Deleted Successfully')->with('class', 'danger');
+            return redirect('Bill')->with('success', 'Deleted Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 }

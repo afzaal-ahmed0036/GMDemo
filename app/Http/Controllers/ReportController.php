@@ -16,7 +16,7 @@ class ReportController extends Controller
     {
         $joural = DB::table('v_journal')->get();
         //    dd($joural);
-        return view('a_blank', compact('joural'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('a_blank', compact('joural'))->with('success', 'Logout Successfully.');
     }
     public function store(Request $request)
     {
@@ -56,7 +56,7 @@ class ReportController extends Controller
         // dd($id);
         $data = DB::table('v_journal')->where('VHNO', $id)->get();
         // dd($data);
-        return view('a_blank3', compact('data'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('a_blank3', compact('data'))->with('success', 'Logout Successfully.');
     }
     public function generalReport()
     {
@@ -65,7 +65,7 @@ class ReportController extends Controller
     }
     public function showGeneralReport()
     {
-        return view('reports.showjournalreport')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.showjournalreport')->with('success', 'Logout Successfully.');
     }
 
     public function searchByDate(request $request)
@@ -172,13 +172,13 @@ class ReportController extends Controller
     {
         $joural = DB::table('v_journal')->get();
 
-        return view('reports.completejournal', compact('joural'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.completejournal', compact('joural'))->with('success', 'Logout Successfully.');
     }
 
     // .......................Trail Report Section.................
     public function trialreportsearch()
     {
-        return view('trial_report.trialreportsearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('trial_report.trialreportsearch')->with('success', 'Logout Successfully.');
     }
 
 
@@ -250,7 +250,7 @@ class ReportController extends Controller
 
     public function receiveabledetailsearch()
     {
-        return view('reports.receiveabledetailsearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.receiveabledetailsearch')->with('success', 'Logout Successfully.');
     }
 
     public function receiveabledetail(request $request)
@@ -362,7 +362,7 @@ class ReportController extends Controller
 
     public function paymentsmadesearch()
     {
-        return view('reports.paymentsmadesearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.paymentsmadesearch')->with('success', 'Logout Successfully.');
     }
 
     public function paymentsmade(request $request)
@@ -467,7 +467,7 @@ $company = DB::table('company')->get();
 
     public function payablesearch()
     {
-        return view('reports.payablesearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.payablesearch')->with('success', 'Logout Successfully.');
     }
 
     public function payable(request $request)
@@ -582,7 +582,7 @@ $company = DB::table('company')->get();
 
     public function receiveabledetailsummarysearch()
     {
-        return view('reports.receiveabledetailsummarysearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.receiveabledetailsummarysearch')->with('success', 'Logout Successfully.');
     }
 
     public function receiveabledetailsummary(request $request)
@@ -697,7 +697,7 @@ $company = DB::table('company')->get();
 
     public function vendorcreditsearch()
     {
-        return view('reports.vendorcreditsearch')->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('reports.vendorcreditsearch')->with('success', 'Logout Successfully.');
     }
 
     public function vendorcredits(request $request)

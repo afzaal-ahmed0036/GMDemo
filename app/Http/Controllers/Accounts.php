@@ -2,68 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-// for API data receiving from http source
-use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
-// use Datatables;
 use Yajra\DataTables\DataTables;
-
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SendMail;
 use App\Models\Warehouse;
-use App\Models\Unit;
-use App\Models\PosSetting;
-use App\Models\Item;
 use App\Models\InvoiceMaster;
-use App\Models\InvoiceDetail;
-
-// for excel export
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
-// end for excel export
-use App\Models\Brand;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use URL;
-use Image;
-use Maatwebsite\Excel\Excel;
-use File;
-use PDF;
-use Keygen;
-
 use Illuminate\Support\Arr;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class Accounts extends Controller
 {
 
     public function __construct()
     {
-        if (session::get('UserID') == 1) {
+        if (Session::get('UserID') == 1) {
             echo  "null";
         }
     }
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-
-
-
-
     public function CheckUserRole1($userid, $tablename, $action)
     {
-        // $allow= check_role(session::get('UserID'),'Petty Cash','List');
         $allow = DB::table('user_role')->where('UserID', $userid)
             ->where('Table', $tablename)
             ->where('Action', $action)
             ->get();
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
     }
     public function Login()
@@ -74,26 +43,23 @@ class Accounts extends Controller
             if ($userType == 'Biller') {
                 return redirect('create-voucher');
             } else {
-                return redirect('Dashboard')->with('error', 'Welcome to ' . session::get('CompanyName') . ' Software')->with('class', 'success');
+                return redirect('Dashboard')->with('success', 'Welcome to ' . Session::get('CompanyName') . ' Software');
             }
         } else {
             $company = DB::table('company')->get();
             return view('login', compact('company'));
         }
     }
-    public function UserVerify(request $request)
+    public function UserVerify(Request $request)
     {
         $input = $request->only(['username', 'password']);
         $username = $input['username'];
         $password =  $input['password'];
-
         $data = DB::table('user')->where('Email', '=', $username)
             ->where('Password', '=', $password)
             ->where('Active', '=', 'Yes')
             ->get();
-
         $company = DB::table('company')->get();
-
         if (count($data) > 0) {
             Session::put('FullName', $data[0]->FullName);
             Session::put('UserID', $data[0]->UserID);
@@ -101,54 +67,36 @@ class Accounts extends Controller
             Session::put('UserType', $data[0]->UserType);
             Session::put('Currency', $company[0]->Currency);
             Session::put('CompanyName', $company[0]->Name . ' ' . $company[0]->Name2);
-
             if ($data[0]->UserType == 'Biller') {
                 return redirect('create-voucher');
             } else {
-                return redirect('Dashboard')->with('error', 'Welcome to ' . session::get('CompanyName') . ' Software')->with('class', 'success');
+                return redirect('Dashboard')->with('success', 'Welcome to ' . Session::get('CompanyName') . ' Software');
             }
         } else {
-            return redirect('Login')->withinput($request->all())->with('error', 'Invalid username or Password. Try again')->with('class', 'danger');
+            return redirect('Login')->withinput($request->all())->with('error', 'Invalid username or Password. Try again');
         }
     }
     public  function PettyCash()
-    {
-        // $data = DB::table('data')->get();
-
-        // $id = DB::table('customer')->where('customer_id',$customer_id)->delete();
-
-
-        session::put('menu', 'PettyCash');
+    {Session::put('menu', 'PettyCash');
         $pagetitle = 'Petty Cash';
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Petty Cash', 'List');
+        $allow = check_role(Session::get('UserID'), 'Petty Cash', 'List');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        return view('pettycash', compact('pagetitle'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('pettycash', compact('pagetitle'))->with('success', 'Logout Successfully.');
     }
     public function ajax_pettycash(Request $request)
     {
-        session::put('menu', 'PettyCash');
+        Session::put('menu', 'PettyCash');
         $pagetitle = 'Petty Cash';
         if ($request->ajax()) {
             $data = DB::table('v_pettycash_master')->orderBy('PettyMstID')->get();
             return Datatables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    // if you want to use direct link instead of dropdown use this line below
-                    // <a href="javascript:void(0)"  onclick="edit_data('.$row->customer_id.')" >Edit</a> | <a href="javascript:void(0)"  onclick="del_data('.$row->customer_id.')"  >Delete</a>
-                    $btn = '
-
-
-                    <div class="d-flex align-items-center col-actions">
-                    <a href="' . URL('/PettyCashEdit/' . $row->PettyMstID) . '"><i class="bx bx-pencil align-middle me-1 text-secondary"></i></a>
-                    <a href="' . URL('/PettyDelete/' . $row->PettyMstID) . '"><i class="bx bx-trash align-middle me-1 text-secondary"></i></a>
-                    </div>';
-
-                    //class="edit btn btn-primary btn-sm"
-                    // <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    $btn = '<div class="d-flex align-items-center col-actions"><a href="' . URL('/PettyCashEdit/' . $row->PettyMstID) . '"><i class="bx bx-pencil align-middle me-1 text-secondary"></i></a><a href="' . URL('/PettyDelete/' . $row->PettyMstID) . '"><i class="bx bx-trash align-middle me-1 text-secondary"></i></a></div>';
                     return $btn;
                 })
                 ->rawColumns(['action'])
@@ -160,12 +108,12 @@ class Accounts extends Controller
     public  function PettyCashCreate()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Petty Cash', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Petty Cash', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'PettyCash');
+        Session::put('menu', 'PettyCash');
         $pagetitle = 'Petty Cash';
         $voucher_type = DB::table('voucher_type')->get();
         $items = DB::table('item')->get();
@@ -173,16 +121,16 @@ class Accounts extends Controller
         $supplier = DB::table('supplier')->get();
         $vhno = DB::table('invoice_master')->select(DB::raw('max(InvoiceMasterID)+1 as VHNO'))->get();
 
-        session::get('VHNO', $vhno[0]->VHNO);
+        Session::get('VHNO', $vhno[0]->VHNO);
 
-        return view('pettycash_create', compact('voucher_type', 'items', 'supplier', 'vhno', 'pagetitle', 'chartofaccount'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('pettycash_create', compact('voucher_type', 'items', 'supplier', 'vhno', 'pagetitle', 'chartofaccount'))->with('success', 'Logout Successfully.');
     }
-    public  function PettyCashSave(request $request)
+    public  function PettyCashSave(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Petty Cash', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Petty Cash', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -221,18 +169,18 @@ class Accounts extends Controller
 
 
 
-        return redirect('PettyCash')->with('error', 'Record Saved')->with('class', 'success');
+        return redirect('PettyCash')->with('success', 'Record Saved');
     }
 
     public  function PettyCashEdit($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Petty Cash', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Petty Cash', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'PettyCash');
+        Session::put('menu', 'PettyCash');
         $pagetitle = 'Petty Cash';
         $chartofaccount = DB::table('chartofaccount')->where('L3', '!=', 'L2')->where('L1', '!=', 'L2')->get();
         $pettycash_master = DB::table('pettycash_master')->where('PettyMstID', $id)->get();
@@ -243,12 +191,12 @@ class Accounts extends Controller
         return view('pettycash_edit', compact('chartofaccount', 'pettycash_master', 'pettycash_detail', 'pagetitle'));
     }
 
-    public  function PettyCashUpdate(request $request)
+    public  function PettyCashUpdate(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Petty Cash', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Petty Cash', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -288,12 +236,12 @@ class Accounts extends Controller
 
 
 
-        return redirect('PettyCash')->with('error', 'Record Updated')->with('class', 'success');
+        return redirect('PettyCash')->with('success', 'Record Updated');
     }
     // petty udate end
     public  function JV()
     {
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         $voucher_type = DB::table('voucher_type')->where('VoucherCode', 'JV')->get();
 
@@ -304,17 +252,17 @@ class Accounts extends Controller
 
 
 
-        return view('jv_create', compact('voucher_type', 'chartofaccount', 'supplier', 'vhno', 'pagetitle', 'party'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('jv_create', compact('voucher_type', 'chartofaccount', 'supplier', 'vhno', 'pagetitle', 'party'))->with('success', 'Logout Successfully.');
     }
     public  function Voucher()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'List');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'List');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         $voucher_type = DB::table('voucher_type')->get();
         $chartofaccount = DB::table('chartofaccount')->where('L3', '!=', 'L2')->where('L1', '!=', 'L2')->get();
@@ -323,11 +271,11 @@ class Accounts extends Controller
 
 
 
-        return view('voucher', compact('voucher_type', 'chartofaccount', 'supplier', 'vhno', 'pagetitle'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('voucher', compact('voucher_type', 'chartofaccount', 'supplier', 'vhno', 'pagetitle'))->with('success', 'Logout Successfully.');
     }
     public function ajax_voucher(Request $request)
     {
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         if ($request->ajax()) {
             $data = DB::table('v_voucher')->orderBy('VoucherMstID')->get();
@@ -363,9 +311,9 @@ class Accounts extends Controller
     public  function VoucherCreate($vouchertype)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -382,7 +330,7 @@ class Accounts extends Controller
             $chartofaccount1 = DB::table('chartofaccount')->where(DB::raw('right(ChartOfAccountID,3)'), '<>', 000)
                 ->whereIn('Category', ['CASH'])->get();
         }
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         $voucher_type = DB::table('voucher_type')->where('VoucherCode', $vouchertype)->get();
 
@@ -393,15 +341,15 @@ class Accounts extends Controller
         $chartofaccount = DB::table('chartofaccount')->where(DB::raw('right(ChartOfAccountID,3)'), '<>', 000)
             ->get();
 
-        return view('voucher_create', compact('voucher_type', 'chartofaccount', 'chartofaccount1', 'supplier', 'vhno', 'pagetitle', 'party'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('voucher_create', compact('voucher_type', 'chartofaccount', 'chartofaccount1', 'supplier', 'vhno', 'pagetitle', 'party'))->with('success', 'Logout Successfully.');
     }
-    public function VoucherSave(request $request)
+    public function VoucherSave(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
@@ -499,17 +447,17 @@ class Accounts extends Controller
 
 
 
-        return redirect('Voucher')->with('error', 'Record Saved')->with('class', 'success');
+        return redirect('Voucher')->with('success', 'Record Saved');
     }
 
 
-    public function JVSave(request $request)
+    public function JVSave(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -561,18 +509,18 @@ class Accounts extends Controller
 
 
 
-        return redirect('Voucher')->with('error', 'Record Saved')->with('class', 'success');
+        return redirect('Voucher')->with('success', 'Record Saved');
     }
 
     public  function VoucherEdit($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         $voucher_type = DB::table('voucher_type')->get();
         $chartofaccount = DB::table('chartofaccount')->where('L3', '!=', 'L2')->where('L1', '!=', 'L2')->get();
@@ -586,12 +534,12 @@ class Accounts extends Controller
         return view('voucher_edit', compact('voucher_type', 'chartofaccount', 'supplier', 'pagetitle', 'voucher_master', 'voucher_detail', 'party'));
     }
 
-    public  function VoucherUpdate(request $request)
+    public  function VoucherUpdate(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -633,17 +581,17 @@ class Accounts extends Controller
 
 
 
-        return redirect('Voucher')->with('error', 'Record Updated')->with('class', 'success');
+        return redirect('Voucher')->with('success', 'Record Updated');
     }
     public function VoucherView($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'View');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'VoucherReport');
+        Session::put('menu', 'VoucherReport');
         $pagetitle = 'Voucher Report';
         // dd($request->all());
         // dd($request->VoucherTypeID);
@@ -665,27 +613,27 @@ class Accounts extends Controller
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher', 'Delete');
+        $allow = check_role(Session::get('UserID'), 'Voucher', 'Delete');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'VoucherReport');
+        Session::put('menu', 'VoucherReport');
         $pagetitle = 'Voucher';
         $id1 = DB::table('voucher_master')->where('VoucherMstID', $id)->delete();
         $id2 = DB::table('voucher_detail')->where('VoucherMstID', $id)->delete();
         $id3 = DB::table('journal')->where('VoucherMstID', $id)->delete();
-        return view('voucher', compact('pagetitle'))->with('error', 'Deleted Successfully.')->with('class', 'success');
+        return view('voucher', compact('pagetitle'))->with('success', 'Deleted Successfully.');
     }
 
     public  function Invoice()
     {
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $pagetitle = 'Invoice';
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'List');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'List');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -695,7 +643,7 @@ class Accounts extends Controller
     public function ajax_invoice(Request $request)
 
     {
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $pagetitle = 'Invoice';
         if ($request->ajax()) {
             $data = DB::table('v_invoice_master')
@@ -707,29 +655,7 @@ class Accounts extends Controller
             return Datatables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
-                    // if you want to use direct link instead of dropdown use this line below
-                    // <a href="javascript:void(0)"  onclick="edit_data('.$row->customer_id.')" >Edit</a> | <a href="javascript:void(0)"  onclick="del_data('.$row->customer_id.')"  >Delete</a>
-
-
-                    $btn = '
-
-
-<div class="d-flex align-items-center col-actions">
-
-
-<a href="' . URL('/SaleInvoiceView/' . $row->InvoiceMasterID) . '"><i class="font-size-18 mdi mdi-eye-outline align-middle me-1 text-secondary"></i></a>
-<a href="' . URL('/SaleInvoiceViewPDF/' . $row->InvoiceMasterID) . '"><i class="font-size-18 me-1 mdi mdi-file-pdf-outline align-middle me-1 text-secondary"></i></a>
-<a href="' . URL('/SaleInvoiceEdit/' . $row->InvoiceMasterID) . '"><i class="font-size-18 bx bx-pencil align-middle me-1 text-secondary"></i></a>
-
-
-<a href="javascript:void(0)" onclick="delete_invoice(' . $row->InvoiceMasterID . ')" ><i class="font-size-18 bx bx-trash text-danger align-middle me-1 text-secondary"></i></a>
-
-
-</div>
-';
-
-                    //class="edit btn btn-primary btn-sm"
-                    // <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    $btn = '<div class="d-flex align-items-center col-actions"><a href="' . URL('/SaleInvoiceView/' . $row->InvoiceMasterID) . '"><i class="font-size-18 mdi mdi-eye-outline align-middle me-1 text-secondary"></i></a><a href="' . URL('/SaleInvoiceViewPDF/' . $row->InvoiceMasterID) . '"><i class="font-size-18 me-1 mdi mdi-file-pdf-outline align-middle me-1 text-secondary"></i></a><a href="' . URL('/SaleInvoiceEdit/' . $row->InvoiceMasterID) . '"><i class="font-size-18 bx bx-pencil align-middle me-1 text-secondary"></i></a><a href="javascript:void(0)" onclick="delete_invoice(' . $row->InvoiceMasterID . ')" ><i class="font-size-18 bx bx-trash text-danger align-middle me-1 text-secondary"></i></a></div>';
                     return $btn;
                 })
                 ->rawColumns(['action'])
@@ -741,13 +667,13 @@ class Accounts extends Controller
     public  function InvoiceCreate()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $supplier = DB::table('supplier')->get();
@@ -757,9 +683,9 @@ class Accounts extends Controller
 
 
 
-        return view('invoice_create', compact('invoice_type', 'items', 'supplier', 'vhno', 'party'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('invoice_create', compact('invoice_type', 'items', 'supplier', 'vhno', 'party'))->with('success', 'Logout Successfully.');
     }
-    public  function Ajax_Balance(request $request)
+    public  function Ajax_Balance(Request $request)
     {
 
         $data = array('SupplierID' => $request->input('SupplierID'));
@@ -771,12 +697,12 @@ class Accounts extends Controller
 
         return view('ajax_balance', compact('supplier'));
     }
-    public  function InvoiceSave(request $request)
+    public  function InvoiceSave(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -801,7 +727,7 @@ class Accounts extends Controller
             'Total' => $request->input('Total'),
             'Paid' => $request->input('amountPaid'),
             'Balance' => $request->input('amountDue'),
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // $id= DB::table('')->insertGetId($data);
 
@@ -1065,17 +991,17 @@ class Accounts extends Controller
 
 
 
-        return redirect('Invoice')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Invoice Saved');
     }
     public  function InvoiceEdit($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $supplier = DB::table('supplier')->get();
@@ -1085,14 +1011,14 @@ class Accounts extends Controller
         $invoice_mst = DB::table('invoice_master')->where('InvoiceMasterID', $id)->get();
         $invoice_det = DB::table('invoice_detail')->where('InvoiceMasterID', $id)->get();
 
-        return view('invoice_edit', compact('invoice_type', 'items', 'supplier', 'vhno', 'invoice_mst', 'invoice_det'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('invoice_edit', compact('invoice_type', 'items', 'supplier', 'vhno', 'invoice_mst', 'invoice_det'))->with('success', 'Logout Successfully.');
     }
-    public  function InvoiceUpdate(request $request)
+    public  function InvoiceUpdate(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         if ($request->input('PaymentMode') == 'Cash') {
@@ -1115,7 +1041,7 @@ class Accounts extends Controller
             'Total' => $request->input('Total'),
             'Paid' => $request->input('amountPaid'),
             'Balance' => $request->input('amountDue'),
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // $id= DB::table('')->insertGetId($data);
 
@@ -1376,16 +1302,16 @@ class Accounts extends Controller
 
 
 
-        return redirect('Invoice')->with('error', 'Invoice Updated')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Invoice Updated');
     }
 
     public  function InvoiceDelete($id)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'Delete');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'Delete');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -1393,17 +1319,17 @@ class Accounts extends Controller
         $id2 = DB::table('invoice_detail')->where('InvoiceMasterID', $id)->delete();
         $id3 = DB::table('journal')->where('InvoiceMasterID', $id)->delete();
 
-        return redirect('Invoice')->with('error', 'Invoice Deleted')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Invoice Deleted');
     }
     public  function InvoiceView($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'View');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $supplier = DB::table('supplier')->get();
@@ -1422,12 +1348,12 @@ class Accounts extends Controller
     public  function InvoicePDF($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Invoice', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Invoice');
+        Session::put('menu', 'Invoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $supplier = DB::table('supplier')->get();
@@ -1443,7 +1369,7 @@ class Accounts extends Controller
         return $pdf->download($filename . '.pdf');
         // return $pdf->stream();
     }
-    public  function Ajax_VHNO(request $request)
+    public  function Ajax_VHNO(Request $request)
     {
 
 
@@ -1464,7 +1390,7 @@ class Accounts extends Controller
 
         return view('ajax_vhno', compact('data', 'd'));
     }
-    public  function Ajax_PVHNO(request $request)
+    public  function Ajax_PVHNO(Request $request)
     {
 
         $d = array(
@@ -1483,7 +1409,7 @@ class Accounts extends Controller
     }
 
 
-    public  function ajax_invoice_vhno(request $request)
+    public  function ajax_invoice_vhno(Request $request)
     {
 
 
@@ -1524,7 +1450,7 @@ class Accounts extends Controller
 
     public function Dashboard()
     {
-        session::put('menu', 'Dashboard');
+        Session::put('menu', 'Dashboard');
 
 
 
@@ -1537,7 +1463,7 @@ class Accounts extends Controller
         // $encrypted = crypt::decryptString($encrypted);
         // print_r($encrypted);
         //     die;
-        // if(session::get('UserType')=='OM')
+        // if(Session::get('UserType')=='OM')
         //              {
 
         //                return redirect('Login')->with('error','Access Denied!')->with('class','success');
@@ -1618,24 +1544,24 @@ class Accounts extends Controller
     public  function Supplier()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier', 'List / Create');
+        $allow = check_role(Session::get('UserID'), 'Supplier', 'List / Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Supplier');
+        Session::put('menu', 'Supplier');
         $pagetitle = 'Supplier';
 
         $supplier = DB::table('v_supplier')->get();
         $supplier_category = DB::table('supplier_category')->get();
         return view('supplier', compact('pagetitle', 'supplier', 'supplier_category'));
     }
-    public  function SaveSupplier(request $request)
+    public  function SaveSupplier(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier', 'List / Create');
+        $allow = check_role(Session::get('UserID'), 'Supplier', 'List / Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $this->validate(
@@ -1674,29 +1600,29 @@ class Accounts extends Controller
 
 
 
-        return redirect('Supplier')->with('error', 'Save Successfully.')->with('class', 'success');
+        return redirect('Supplier')->with('success', 'Save Successfully.');
     }
     public  function SupplierEdit($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Supplier', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'Supplier');
+        Session::put('menu', 'Supplier');
         $pagetitle = 'Supplier';
 
         $supplier = DB::table('v_supplier')->where('SupplierID', $id)->get();
         $supplier_category = DB::table('supplier_category')->get();
         return view('supplier_edit', compact('pagetitle', 'supplier', 'supplier_category'));
     }
-    public  function SupplierUpdate(request $request)
+    public  function SupplierUpdate(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier', 'Update');
+        $allow = check_role(Session::get('UserID'), 'Supplier', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $this->validate(
@@ -1736,31 +1662,31 @@ class Accounts extends Controller
 
 
 
-        return redirect('Supplier')->with('error', 'Updated Successfully.')->with('class', 'success');
+        return redirect('Supplier')->with('success', 'Updated Successfully.');
     }
     public  function SupplierDelete($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier', 'Delete');
+        $allow = check_role(Session::get('UserID'), 'Supplier', 'Delete');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
         $id = DB::table('supplier')->where('SupplierID', $id)->delete();
-        return redirect('Supplier')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('Supplier')->with('success', 'Deleted Successfully');
     }
     // parties
     public  function ChartOfAcc()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Chart of Account', 'List / Create');
+        $allow = check_role(Session::get('UserID'), 'Chart of Account', 'List / Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'ChartOfAcc');
+        Session::put('menu', 'ChartOfAcc');
         $pagetitle = 'ChartOfAcc';
         $chartofaccount = DB::table('chartofaccount')->get();
         $chart = DB::table('chartofaccount')->get();
@@ -1778,7 +1704,7 @@ class Accounts extends Controller
     }
 
 
-    public  function ChartOfAccountSave(request $request)
+    public  function ChartOfAccountSave(Request $request)
     {
 
         $CODEA = substr($request->ChartOfAccountID, 0, 1) . '00000';
@@ -1815,10 +1741,10 @@ class Accounts extends Controller
         );
 
         $success = DB::table('chartofaccount')->insert($data);
-        return redirect('ChartOfAcc')->with('error', 'Save Successfully.')->with('class', 'success');
+        return redirect('ChartOfAcc')->with('success', 'Save Successfully.');
     }
 
-    public  function ChartOfAccountSaveL3(request $request)
+    public  function ChartOfAccountSaveL3(Request $request)
     {
 
         $CODEA = substr($request->ChartOfAccountID, 0, 1) . '00000';
@@ -1864,7 +1790,7 @@ class Accounts extends Controller
 
         $success = DB::table('chartofaccount')->insert($data);
 
-        return redirect('ChartOfAcc')->with('error', 'Save Successfully.')->with('class', 'success');
+        return redirect('ChartOfAcc')->with('success', 'Save Successfully.');
     }
 
     public  function ChartOfAccountDelete($ChartOfAccountID)
@@ -1873,7 +1799,7 @@ class Accounts extends Controller
 
         $id = DB::table('chartofaccount')->where('ChartOfAccountID', $ChartOfAccountID)->delete();
 
-        return redirect('ChartOfAcc')->with('error', 'Deleted Successfully.')->with('class', 'success');
+        return redirect('ChartOfAcc')->with('success', 'Deleted Successfully.');
     }
 
 
@@ -1882,14 +1808,14 @@ class Accounts extends Controller
 
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Chart of Account', 'List / Create');
+        $allow = check_role(Session::get('UserID'), 'Chart of Account', 'List / Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
 
-        session::put('menu', 'ChartOfAcc');
+        Session::put('menu', 'ChartOfAcc');
         $pagetitle = 'ChartOfAcc';
         $chartofaccount = DB::table('chartofaccount')->where('ChartOfAccountID', $id)->get();
         $chart = DB::table('chartofaccount')->get();
@@ -1916,7 +1842,7 @@ class Accounts extends Controller
 
 
 
-    public function ChartOfAccountUpdate(request $request)
+    public function ChartOfAccountUpdate(Request $request)
     {
 
         // dd($request->all());
@@ -1968,28 +1894,28 @@ class Accounts extends Controller
 
         $success = DB::table('chartofaccount')->insert($data);
 
-        return redirect('ChartOfAcc')->with('error', 'Updated Successfully')->with('class', 'success');
+        return redirect('ChartOfAcc')->with('success', 'Updated Successfully');
     }
 
 
 
     public function UserProfile()
     {
-        $v_users = DB::table('user')->where('UserID', session::get('UserID'))->get();
+        $v_users = DB::table('user')->where('UserID', Session::get('UserID'))->get();
         return  view('user_profile', compact('v_users'));
     }
     public function ChangePassword()
     {
-        $v_users = DB::table('user')->where('UserID', session::get('UserID'))->get();
+        $v_users = DB::table('user')->where('UserID', Session::get('UserID'))->get();
         return  view('change_password', compact('v_users'));
     }
-    public function UpdatePassword(request $request)
+    public function UpdatePassword(Request $request)
     {
-        $user = DB::table('user')->where('UserID', session::get('UserID'))->get();
+        $user = DB::table('user')->where('UserID', Session::get('UserID'))->get();
         if ($user[0]->Password != $request->input('old_password')) {
 
 
-            return redirect('ChangePassword')->with('error', 'Old password doesnot matched')->with('class', 'danger');
+            return redirect('ChangePassword')->with('error', 'Old password doesnot matched');
         }
 
 
@@ -2000,28 +1926,22 @@ class Accounts extends Controller
             'new_password' => 'required|min:6',
             'new_confirm_passowrd' => 'required_with:new_password|same:new_password|min:6'
         ]);
-        // ,[
-        //   'old_password.required' => 'Old Password is required',
-        //        'new_password.required' => 'New Password is required ',
-        //        'new_confirm_passowrd.required' => 'Confirm Password is required '
-
-        // ]);
         $data = array(
             'Password' => $request->input('new_password')
 
 
         );
-        $id = DB::table('users')->where('UserID', session::get('UserID'))->update($data);
-        return redirect('Dashboard')->with('error', 'Password updated Successfully')->with('class', 'success');
+        $id = DB::table('user')->where('UserID', Session::get('UserID'))->update($data);
+        return redirect('Dashboard')->with('success', 'Password updated Successfully');
     }
 
 
     public function Role($UserID)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'User Rights', 'Assign');
+        $allow = check_role(Session::get('UserID'), 'User Rights', 'Assign');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -2035,9 +1955,9 @@ class Accounts extends Controller
     public function RoleView($UserID)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'User Rights', 'Assign');
+        $allow = check_role(Session::get('UserID'), 'User Rights', 'Assign');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -2048,13 +1968,13 @@ class Accounts extends Controller
 
         return view('view_role', compact('pagetitle', 'role', 'users'));
     }
-    public function RoleSave(request $request)
+    public function RoleSave(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'User Rights', 'Assign');
+        $allow = check_role(Session::get('UserID'), 'User Rights', 'Assign');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -2074,15 +1994,15 @@ class Accounts extends Controller
 
             $id = DB::table('user_role')->insertGetId($data);
         }
-        return redirect('User')->with('error', 'User perission saved Successfully')->with('class', 'success');
+        return redirect('User')->with('success', 'User perission saved Successfully');
     }
-    public function RoleUpdate(request $request)
+    public function RoleUpdate(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'User Rights', 'Assign');
+        $allow = check_role(Session::get('UserID'), 'User Rights', 'Assign');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $id = DB::table('user_role')->where('UserID', $request->UserID)->delete();
@@ -2103,9 +2023,9 @@ class Accounts extends Controller
 
             $id = DB::table('user_role')->insertGetId($data);
         }
-        return redirect('User')->with('error', 'User perission saved Successfully')->with('class', 'success');
+        return redirect('User')->with('success', 'User perission saved Successfully');
     }
-    public function SendEMail(request $request)
+    public function SendEMail(Request $request)
     {
         $email = $request->input('Email');
         // $email = ['kashif@inu.edu.pk', 'kashif_mushtaq2008@htomail.com','kashif.mushtaq2050@gmail.com'];
@@ -2115,12 +2035,9 @@ class Accounts extends Controller
             'Email' => $request->input('Email'),
             'Subject' => $request->input('Subject'),
             'Message' => $request->input('Message'),
-
-
-
         );
-        Mail::to($email)->send(new SendMail($data));
-        return redirect($request->input('PageLink'))->with('error', 'Email sent!')->with('class', 'success');
+        // Mail::to($email)->send(new SendMail($data));
+        return redirect($request->input('PageLink'))->with('success', 'Email sent!');
     }
 
     public function ComposeEmail($EmployeeID)
@@ -2133,7 +2050,7 @@ class Accounts extends Controller
     {
         return view('forgot_password');
     }
-    public function SendForgotEmail(request $request)
+    public function SendForgotEmail(Request $request)
     {
 
         if ($request->StaffType == 'Management') {
@@ -2155,9 +2072,9 @@ class Accounts extends Controller
 
                 //      );
                 //Mail::to($email) ->send(new SendMail($data));
-                return redirect('EmailPin')->with('error', 'Enter Code')->with('class', 'success');
+                return redirect('EmailPin')->with('success', 'Enter Code');
             } else {
-                return redirect('ForgotPassword')->with('error', 'Invalid Email')->with('class', 'success');
+                return redirect('ForgotPassword')->with('error', 'Invalid Email');
             }
         } else {
             $username = $request->input('Email');
@@ -2169,9 +2086,9 @@ class Accounts extends Controller
 
                 $data[0]->Email;
 
-                return redirect('EmailPin')->with('error', 'Enter Code')->with('class', 'success');
+                return redirect('EmailPin')->with('success', 'Enter Code');
             } else {
-                //session::flash('error', 'Invalid username or Password. Try again');
+                //Session::flash('error', 'Invalid username or Password. Try again');
                 return redirect('ForgotPassword')->withinput($request->all())->with('error', 'Invalid Email. Try again');
             }
         }
@@ -2183,11 +2100,11 @@ class Accounts extends Controller
     }
 
 
-    public function NewPassword(request $request)
+    public function NewPassword(Request $request)
     {
         $employee = DB::table('employee')->get();
     }
-    public function UpdateNewPassword(request $request)
+    public function UpdateNewPassword(Request $request)
     {
         $employee = DB::table('employee')->get();
     }
@@ -2237,12 +2154,12 @@ class Accounts extends Controller
     public function PartyLedger()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Ledger', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party Ledger', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'PartyLedger');
+        Session::put('menu', 'PartyLedger');
         $pagetitle = 'Party Ledger';
         $party = DB::table('party')->get();
         $voucher_type = DB::table('voucher_type')->get();
@@ -2250,20 +2167,20 @@ class Accounts extends Controller
             ->where('ChartOfAccountID', 110400)->get();
         return view('party_ledger', compact('pagetitle', 'party', 'voucher_type', 'chartofaccount'));
     }
-    public function PartyLedger1(request $request)
+    public function PartyLedger1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Ledger', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party Ledger', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'PartyLedger');
+        Session::put('menu', 'PartyLedger');
         $pagetitle = 'Party Ledger';
 
-        session::put('StartDate', $request->StartDate);
-        session::put('EndDate', $request->EndDate);
+        Session::put('StartDate', $request->StartDate);
+        Session::put('EndDate', $request->EndDate);
 
         $vouchertype = DB::table('voucher_type')->where('VoucherTypeID', $request->VoucherTypeID)->get();
         $where = array();
@@ -2314,20 +2231,20 @@ class Accounts extends Controller
         // $journal = DB::table('v_journal')->where('PartyID',1002)->where('ChartOfAccountID',110400)->get();
         return view('party_ledger1', compact('journal', 'pagetitle', 'sql', 'party'));
     }
-    public function PartyLedger1PDF(request $request)
+    public function PartyLedger1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Ledger', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Party Ledger', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'PartyLedger');
+        Session::put('menu', 'PartyLedger');
         $pagetitle = 'Party Ledger';
 
-        session::put('StartDate', $request->StartDate);
-        session::put('EndDate', $request->EndDate);
+        Session::put('StartDate', $request->StartDate);
+        Session::put('EndDate', $request->EndDate);
 
         $vouchertype = DB::table('voucher_type')->where('VoucherTypeID', $request->VoucherTypeID)->get();
         $where = array();
@@ -2386,7 +2303,7 @@ class Accounts extends Controller
 
 
 
-    public function PartySalesLedger1PDF(request $request)
+    public function PartySalesLedger1PDF(Request $request)
     {
 
         $pagetitle = 'Party Sale Ledger';
@@ -2417,7 +2334,7 @@ class Accounts extends Controller
     }
 
 
-    public function PartySalesLedger2PDF(request $request)
+    public function PartySalesLedger2PDF(Request $request)
     {
 
         $pagetitle = 'Party Sale Ledger';
@@ -2452,7 +2369,7 @@ class Accounts extends Controller
     }
 
 
-    public function PartyLedgerAccount1PDF(request $request)
+    public function PartyLedgerAccount1PDF(Request $request)
     {
 
         $pagetitle = 'Party Sale Ledger';
@@ -2489,13 +2406,13 @@ class Accounts extends Controller
     public  function AdjustmentBalance()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Adjustment Balance', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Adjustment Balance', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'AdjustmentBalance';
-        session::put('menu', 'AdjustmentBalance');
+        Session::put('menu', 'AdjustmentBalance');
         $voucher_type = DB::table('voucher_type')->where('VoucherTypeID', 7)->get();
         $party = DB::table('party')->get();
 
@@ -2503,16 +2420,16 @@ class Accounts extends Controller
 
         return view('adjust_balance', compact('voucher_type', 'pagetitle', 'party'));
     }
-    public function AdjustmentBalanceSave(request $request)
+    public function AdjustmentBalanceSave(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Adjustment Balance', 'Create');
+        $allow = check_role(Session::get('UserID'), 'Adjustment Balance', 'Create');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'AdjustmentBalance');
+        Session::put('menu', 'AdjustmentBalance');
         $pagetitle = 'AdjustmentBalance';
         list($InvoiceTypeID, $InvoiceTypeCode) = explode("-", $request->InvoiceType1);
 
@@ -2828,38 +2745,38 @@ class Accounts extends Controller
 
 
 
-        return redirect('Voucher')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('Voucher')->with('success', 'Saved Successfully');
     }
     public function SupplierBalance()
     {
 
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'SupplierBalance';
         return view('supplier_balance', compact('pagetitle'));
     }
-    public  function SupplierBalance1(request $request)
+    public  function SupplierBalance1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier Balance', 'View');
+        $allow = check_role(Session::get('UserID'), 'Supplier Balance', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'Supplier Balance';
         $supplier = DB::table('supplier')->get();
 
         return view('supplier_balance1', compact('supplier', 'pagetitle'));
     }
-    public  function SupplierBalance1PDF(request $request)
+    public  function SupplierBalance1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier Balance', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Supplier Balance', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'SupplierBalance';
         $supplier = DB::table('supplier')->get();
 
@@ -2873,9 +2790,9 @@ class Accounts extends Controller
     public function PartyList()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party List', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party List', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party List';
@@ -2886,9 +2803,9 @@ class Accounts extends Controller
     public function PartyListPDF()
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party List', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Party List', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Tax Report';
@@ -2898,22 +2815,22 @@ class Accounts extends Controller
         //return $pdf->download('pdfview.pdf');
         $pdf->setpaper('A4', 'landscape');
         return $pdf->stream();
-        return view('party_list', cocompact('party', 'pagetitle'));
+        return view('party_list', compact('party', 'pagetitle'));
     }
     public function OutStandingInvoice()
     {
         $pagetitle = 'Out Standing Invoice';
-        session::put('menu', 'OutStandingInvoice');
+        Session::put('menu', 'OutStandingInvoice');
         $party = DB::table('party')->get();
         return view('outstanding_invoice', compact('party', 'pagetitle'));
     }
 
-    public function OutStandingInvoice1(request $request)
+    public function OutStandingInvoice1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Outstanding Invoices', 'View');
+        $allow = check_role(Session::get('UserID'), 'Outstanding Invoices', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Out Standing Invoice';
@@ -2928,12 +2845,12 @@ class Accounts extends Controller
         // return $pdf->stream();
         return view('outstanding_invoice1', compact('invoice', 'pagetitle'));
     }
-    public function OutStandingInvoice1PDF(request $request)
+    public function OutStandingInvoice1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Outstanding Invoices', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Outstanding Invoices', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Out Standing Invoice';
@@ -2950,19 +2867,19 @@ class Accounts extends Controller
     }
     public function PartyWiseSale()
     {
-        session::put('menu', 'PartyLedger');
+        Session::put('menu', 'PartyLedger');
         $pagetitle = 'Party Ledger';
         $invoice_type = DB::table('invoice_type')->get();
         $party = DB::table('party')->get();
 
         return view('partywise_sale', compact('pagetitle', 'invoice_type', 'party'));
     }
-    public function PartyWiseSale1(request $request)
+    public function PartyWiseSale1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Wise Sale', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party Wise Sale', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party wise sale';
@@ -2985,13 +2902,13 @@ class Accounts extends Controller
         //       return $pdf->stream();
         return View('partywise_sale1', compact('party_wise', 'pagetitle'));
     }
-    public function PartyWiseSale1PDF(request $request)
+    public function PartyWiseSale1PDF(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Wise Sale', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Party Wise Sale', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party wise sale';
@@ -3015,19 +2932,19 @@ class Accounts extends Controller
     }
     public function PartyBalance()
     {
-        session::put('menu', 'PartyLedger');
+        Session::put('menu', 'PartyLedger');
         $pagetitle = 'Party Balance';
         $party = DB::table('party')->get();
 
         return view('party_balance', compact('pagetitle', 'party'));
     }
-    public function PartyBalance1(request $request)
+    public function PartyBalance1(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Balance', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party Balance', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party Balance';
@@ -3040,13 +2957,13 @@ class Accounts extends Controller
     }
 
 
-    public function PartyBalanceAreawise2PDF(request $request)
+    public function PartyBalanceAreawise2PDF(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Balance', 'View');
+        $allow = check_role(Session::get('UserID'), 'Party Balance', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party Balance';
@@ -3072,13 +2989,13 @@ class Accounts extends Controller
 
 
 
-    public function PartyBalance1PDF(request $request)
+    public function PartyBalance1PDF(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Party Balance', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Party Balance', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Party Balance';
@@ -3111,33 +3028,33 @@ class Accounts extends Controller
 
     public function PartyYearlyBalance()
     {
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'SupplierBalance';
         return view('party_yearly_balance', compact('pagetitle'));
     }
-    public  function PartyYearlyBalance1(request $request)
+    public  function PartyYearlyBalance1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Yearly Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Yearly Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'SupplierBalance';
         $party = DB::table('party')->get();
 
         return view('party_yearly_balance1', compact('party'));
     }
-    public  function PartyYearlyBalance1PDF(request $request)
+    public  function PartyYearlyBalance1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Yearly Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Yearly Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'SupplierBalance');
+        Session::put('menu', 'SupplierBalance');
         $pagetitle = 'SupplierBalance';
         $party = DB::table('party')->get();
         $pdf = PDF::loadView('party_yearly_balance1PDF', compact('party'));
@@ -3152,24 +3069,24 @@ class Accounts extends Controller
     public function SupplierLedger()
     {
 
-        session::put('menu', 'SupplierLedger');
+        Session::put('menu', 'SupplierLedger');
         $pagetitle = 'Supplier Ledger';
         $supplier = DB::table('supplier')->get();
         $voucher_type = DB::table('voucher_type')->get();
         $chartofaccount = DB::table('chartofaccount')->where('ChartOfAccountID', 210100)->get();
         return view('supplier_ledger', compact('pagetitle', 'supplier', 'voucher_type', 'chartofaccount'));
     }
-    public function SupplierLedger1(request $request)
+    public function SupplierLedger1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier Ledger', 'View');
+        $allow = check_role(Session::get('UserID'), 'Supplier Ledger', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'SupplierLedger');
+        Session::put('menu', 'SupplierLedger');
         $pagetitle = 'Supplier Ledger';
 
 
@@ -3201,17 +3118,17 @@ class Accounts extends Controller
         // $journal = DB::table('v_journal')->where('PartyID',1002)->where('ChartOfAccountID',110400)->get();
         return view('supplier_ledger1', compact('journal', 'pagetitle', 'sql', 'supplier'));
     }
-    public function SupplierLedger1PDF(request $request)
+    public function SupplierLedger1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Supplier Ledger', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Supplier Ledger', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'SupplierLedger');
+        Session::put('menu', 'SupplierLedger');
         $pagetitle = 'Supplier Ledger';
 
 
@@ -3245,7 +3162,7 @@ class Accounts extends Controller
     }
 
 
-    public function SupplierBillLedger2PDF(request $request)
+    public function SupplierBillLedger2PDF(Request $request)
     {
 
         $pagetitle = 'Party Sale Ledger';
@@ -3282,20 +3199,20 @@ class Accounts extends Controller
 
     public function SupplierWiseSale()
     {
-        session::put('menu', 'SupplierLedger');
+        Session::put('menu', 'SupplierLedger');
         $pagetitle = 'Supplier Ledger';
         $invoice_type = DB::table('invoice_type')->get();
         $supplier = DB::table('supplier')->get();
 
         return view('supplierwise_sale', compact('pagetitle', 'invoice_type', 'supplier'));
     }
-    public function SupplierWiseSale1(request $request)
+    public function SupplierWiseSale1(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Sales Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Sales Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Supplier wise sale';
@@ -3327,13 +3244,13 @@ class Accounts extends Controller
     }
 
 
-    public function SupplierWiseSale1PDF(request $request)
+    public function SupplierWiseSale1PDF(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Sales Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Sales Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Supplier wise sale';
@@ -3368,19 +3285,19 @@ class Accounts extends Controller
     public function TaxReport()
     {
 
-        session::put('menu', 'TaxReport');
+        Session::put('menu', 'TaxReport');
         $pagetitle = 'Tax Report';
         $invoice_type = DB::table('invoice_type')->get();
         $item = DB::table('item')->get();
 
         return view('tax_report', compact('pagetitle', 'invoice_type', 'item'));
     }
-    public function TaxReport1(request $request)
+    public function TaxReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Tax Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Tax Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Tax Report';
@@ -3404,12 +3321,12 @@ class Accounts extends Controller
 
 
     }
-    public function TaxReport1PDF(request $request)
+    public function TaxReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Tax Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Tax Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Tax Report';
@@ -3435,18 +3352,18 @@ class Accounts extends Controller
     public function TaxOverallReport()
     {
 
-        session::put('menu', 'TaxReport');
+        Session::put('menu', 'TaxReport');
         $pagetitle = 'Tax Report';
 
 
         return view('tax_overall_report', compact('pagetitle'));
     }
-    public function TaxOverallReport1(request $request)
+    public function TaxOverallReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Tax Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Tax Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Tax Report';
@@ -3492,12 +3409,12 @@ class Accounts extends Controller
 
 
     }
-    public function TaxOverallReport1PDF(request $request)
+    public function TaxOverallReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Tax Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Tax Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Tax Report';
@@ -3545,7 +3462,7 @@ class Accounts extends Controller
 
     public function SalemanReport()
     {
-        session::put('menu', 'SalemanReport');
+        Session::put('menu', 'SalemanReport');
         $pagetitle = 'Saleman Report';
         $invoice_type = DB::table('invoice_type')->get();
         $item = DB::table('item')->get();
@@ -3553,12 +3470,12 @@ class Accounts extends Controller
 
         return view('saleman_report', compact('pagetitle', 'invoice_type', 'user', 'item'));
     }
-    public function SalemanReport1(request $request)
+    public function SalemanReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Sale Man Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Sale Man Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Saleman Report';
@@ -3587,12 +3504,12 @@ class Accounts extends Controller
         //       return $pdf->stream();
         return View('saleman_report1', compact('invoice_master', 'pagetitle'));
     }
-    public function SalemanReport1PDF(request $request)
+    public function SalemanReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Sale Man Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Sale Man Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Saleman Report';
@@ -3622,14 +3539,14 @@ class Accounts extends Controller
     }
     public function AirlineSummary()
     {
-        session::put('menu', 'AirlineSummary');
+        Session::put('menu', 'AirlineSummary');
         $pagetitle = 'Airline Summary';
         $invoice_type = DB::table('invoice_type')->get();
         $supplier = DB::table('supplier')->get();
 
         return view('airline_summary', compact('pagetitle', 'invoice_type', 'supplier'));
     }
-    public function AirlineSummary1(request $request)
+    public function AirlineSummary1(Request $request)
     {
 
 
@@ -3675,9 +3592,9 @@ class Accounts extends Controller
 
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Airline Summary', 'View');
+        $allow = check_role(Session::get('UserID'), 'Airline Summary', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Airline Summary';
@@ -3746,15 +3663,15 @@ class Accounts extends Controller
         // return $pdf->stream();
         return View('airline_summary1', compact('supplier', 'pagetitle'));
     }
-    public function AirlineSummary1PDF(request $request)
+    public function AirlineSummary1PDF(Request $request)
     {
 
 
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Airline Summary', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Airline Summary', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Airline Summary';
@@ -3825,30 +3742,30 @@ class Accounts extends Controller
     }
     public function VoucherReport()
     {
-        session::put('menu', 'VoucherReport');
+        Session::put('menu', 'VoucherReport');
         $pagetitle = 'Voucher Report';
         $voucher_type = DB::table('voucher_type')->get();
         return view('voucher_report', compact('pagetitle', 'voucher_type'));
     }
-    public function VoucherReport1(request $request)
+    public function VoucherReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher Report', 'View');
+        $allow = check_role(Session::get('UserID'), 'Voucher Report', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
-        session::put('menu', 'VoucherReport');
+        Session::put('menu', 'VoucherReport');
         $pagetitle = 'Voucher Report';
         // dd($request->all());
         // dd($request->VoucherTypeID);
 
         if ($request->VoucherTypeID == 0) {
-            session::put('menu', 'VoucherReport');
+            Session::put('menu', 'VoucherReport');
             $pagetitle = 'Voucher Report';
 
-            return redirect('VoucherReport')->with('error', 'Please select voucher type')->with('class', 'danger');
+            return redirect('VoucherReport')->with('error', 'Please select voucher type');
         }
         $voucher_type = DB::table('voucher_type')
             ->where('VoucherTypeID', $request->VoucherTypeID)
@@ -3862,15 +3779,15 @@ class Accounts extends Controller
 
         return view('voucher_report1', compact('pagetitle', 'voucher_type', 'voucher_master', 'pagetitle'));
     }
-    public function VoucherReport1PDF(request $request)
+    public function VoucherReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Voucher Report', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Voucher Report', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
-        session::put('menu', 'VoucherReport');
+        Session::put('menu', 'VoucherReport');
         $pagetitle = 'Voucher Report';
         // dd($request->all());
         // dd($request->VoucherTypeID);
@@ -3894,24 +3811,24 @@ class Accounts extends Controller
     public function CashbookReport()
     {
 
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
         $chartofaccount = DB::table('chartofaccount')
             ->whereIn('ChartOfAccountID', [110101, 110250, 110201, 110101])
             ->get();
         return view('cashbook_report', compact('pagetitle', 'chartofaccount'));
     }
-    public function CashbookReport1(request $request)
+    public function CashbookReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Cash Book', 'View');
+        $allow = check_role(Session::get('UserID'), 'Cash Book', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
 
 
@@ -3961,17 +3878,17 @@ class Accounts extends Controller
         // $journal = DB::table('v_journal')->where('PartyID',1002)->where('ChartOfAccountID',110400)->get();
         return view('cashbook_report1', compact('journal', 'pagetitle', 'sql'));
     }
-    public function CashbookReport1PDF(request $request)
+    public function CashbookReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Cash Book', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Cash Book', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
 
 
@@ -4023,7 +3940,7 @@ class Accounts extends Controller
     }
     public function DaybookReport()
     {
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
         $chartofaccount = DB::table('chartofaccount')
             ->whereIn('ChartOfAccountID', [110101, 110250, 110201, 110101])
@@ -4032,16 +3949,16 @@ class Accounts extends Controller
     }
 
 
-    public function DaybookReport1(request $request)
+    public function DaybookReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Day Book', 'View');
+        $allow = check_role(Session::get('UserID'), 'Day Book', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT /////////////////////////////////////////////////
 
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
 
         $invoice_master = DB::table('v_invoice_master')
@@ -4117,17 +4034,17 @@ class Accounts extends Controller
         }
         return view('daybook_report1', compact('journal', 'pagetitle', 'sql', 'invoice_master', 'row', 'invoice_master_summary', 'journal_summary'));
     }
-    public function DaybookReport1PDF(request $request)
+    public function DaybookReport1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Day Book', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Day Book', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'CashbookReport');
+        Session::put('menu', 'CashbookReport');
         $pagetitle = 'Cashbook Report';
 
         $invoice_master = DB::table('v_invoice_master')
@@ -4203,24 +4120,24 @@ class Accounts extends Controller
     }
     public function GeneralLedger()
     {
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
         $chartofaccount = DB::table('chartofaccount')
             ->whereIn('ChartOfAccountID', [110101, 110250, 110201, 110101])
             ->get();
         return view('general_ledger', compact('pagetitle', 'chartofaccount'));
     }
-    public function GeneralLedger1(request $request)
+    public function GeneralLedger1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'General Ledger', 'View');
+        $allow = check_role(Session::get('UserID'), 'General Ledger', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
 
 
@@ -4271,17 +4188,17 @@ class Accounts extends Controller
 
         return view('general_ledger1', compact('journal', 'pagetitle', 'sql', 'journal_summary'));
     }
-    public function GeneralLedger1PDF(request $request)
+    public function GeneralLedger1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'General Ledger', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'General Ledger', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
 
         if ($request->ChartOfAccountID > 0) {
@@ -4334,7 +4251,7 @@ class Accounts extends Controller
     }
     public function TrialBalance()
     {
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
         $chartofaccount = DB::table('v_chartofaccount')
 
@@ -4343,16 +4260,16 @@ class Accounts extends Controller
 
         return view('trial_balance', compact('pagetitle', 'chartofaccount'));
     }
-    public function TrialBalance1(request $request)
+    public function TrialBalance1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Trial Balance', 'View');
+        $allow = check_role(Session::get('UserID'), 'Trial Balance', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'Trial Balance';
         if ($request->ChartOfAccountID > 0) {
 
@@ -4375,16 +4292,16 @@ class Accounts extends Controller
         }
         return view('trial_balance1', compact('trial', 'pagetitle'));
     }
-    public function TrialBalance1PDF(request $request)
+    public function TrialBalance1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Trial Balance', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Trial Balance', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'Trial Balance';
         if ($request->ChartOfAccountID > 0) {
 
@@ -4413,7 +4330,7 @@ class Accounts extends Controller
     }
     public function TicketRegister()
     {
-        session::put('menu', 'AirlineSummary');
+        Session::put('menu', 'AirlineSummary');
         $pagetitle = 'Airline Summary';
         $invoice_type = DB::table('invoice_type')->get();
         $item = DB::table('item')->get();
@@ -4422,12 +4339,12 @@ class Accounts extends Controller
 
         return view('ticket_register', compact('pagetitle', 'invoice_type', 'supplier', 'item', 'user'));
     }
-    public function TicketRegister1(request $request)
+    public function TicketRegister1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Ticket Register', 'View');
+        $allow = check_role(Session::get('UserID'), 'Ticket Register', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -4469,13 +4386,13 @@ class Accounts extends Controller
         // return $pdf->stream();
         return View('ticket_register1', compact('invoice_detail', 'invoice_summary', 'pagetitle'));
     }
-    public function TicketRegister1PDF(request $request)
+    public function TicketRegister1PDF(Request $request)
     {
 
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Ticket Register', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Ticket Register', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
@@ -4518,7 +4435,7 @@ class Accounts extends Controller
 
     public function TrialBalanceActivity()
     {
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
         $chartofaccount = DB::table('v_chartofaccount')
 
@@ -4527,32 +4444,32 @@ class Accounts extends Controller
 
         return view('trial_balance_activity', compact('pagetitle', 'chartofaccount'));
     }
-    public function TrialBalanceActivity1(request $request)
+    public function TrialBalanceActivity1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Trial with Activity', 'View');
+        $allow = check_role(Session::get('UserID'), 'Trial with Activity', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'Trial Balance';
         $chartofaccount = DB::select('SELECT ChartOfAccountID,ChartOfAccountName from chartofaccount where ChartOfAccountID in (select ChartOfAccountID from journal where Date between "' . $request->StartDate . '" and "' . $request->EndDate . '") union SELECT ChartOfAccountID,ChartOfAccountName from chartofaccount where ChartOfAccountID in (select ChartOfAccountID from journal where Date < "' . $request->StartDate . '"   )');
 
 
         return view('trial_balance_activity1', compact('chartofaccount', 'pagetitle'));
     }
-    public function TrialBalanceActivity1PDF(request $request)
+    public function TrialBalanceActivity1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Trial with Activity', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Trial with Activity', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'Trial Balance';
         $chartofaccount = DB::select('SELECT ChartOfAccountID,ChartOfAccountName from chartofaccount where ChartOfAccountID in (select ChartOfAccountID from journal where Date between "' . $request->StartDate . '" and "' . $request->EndDate . '") union SELECT ChartOfAccountID,ChartOfAccountName from chartofaccount where ChartOfAccountID in (select ChartOfAccountID from journal where Date < "' . $request->StartDate . '"   )');
         $pdf = PDF::loadView('trial_balance_activity1pdf', compact('chartofaccount', 'pagetitle'));
@@ -4564,19 +4481,19 @@ class Accounts extends Controller
     }
     public function InvoiceSummary()
     {
-        session::put('menu', 'AirlineSummary');
+        Session::put('menu', 'AirlineSummary');
         $pagetitle = 'Airline Summary';
         $invoice_type = DB::table('invoice_type')->get();
         $user = DB::table('user')->get();
 
         return view('invoice_summary', compact('pagetitle', 'invoice_type', 'user'));
     }
-    public function InvoiceSummary1(request $request)
+    public function InvoiceSummary1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice Summary', 'View');
+        $allow = check_role(Session::get('UserID'), 'Invoice Summary', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Invoice Summary';
@@ -4609,12 +4526,12 @@ class Accounts extends Controller
         // return $pdf->stream();
         return View('invoice_summary1', compact('invoice_summary', 'invoice_total', 'pagetitle'));
     }
-    public function InvoiceSummary1PDF(request $request)
+    public function InvoiceSummary1PDF(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'Invoice Summary', 'PDF');
+        $allow = check_role(Session::get('UserID'), 'Invoice Summary', 'PDF');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $pagetitle = 'Invoice Summary';
@@ -4661,7 +4578,7 @@ class Accounts extends Controller
     }
 
 
-    public  function ProfitAndLoss1(request $request)
+    public  function ProfitAndLoss1(Request $request)
     {
         $pagetitle = 'Proft & Loss';
 
@@ -4682,19 +4599,19 @@ class Accounts extends Controller
     }
 
 
-    public  function BalanceSheet1(request $request)
+    public  function BalanceSheet1(Request $request)
     {
         $pagetitle = 'Proft & Loss';
 
         //profit and loss total will be used in balance sheet
         $activityr = DB::table('v_journal')
             ->select(DB::raw('sum(if(ISNULL(Cr),0,Cr))-sum(if(ISNULL(Dr),0,Dr)) as Balance'))
-            ->whereBetween('Date', array(request()->StartDate, request()->EndDate))
+            ->whereBetween('Date', array(Request()->StartDate, request()->EndDate))
             ->where('CODE', 'R')
             ->get();
         $activitye = DB::table('v_journal')
             ->select(DB::raw('sum(if(ISNULL(Dr),0,Dr))-sum(if(ISNULL(Cr),0,Cr)) as Balance'))
-            ->whereBetween('Date', array(request()->StartDate, request()->EndDate))
+            ->whereBetween('Date', array(Request()->StartDate, request()->EndDate))
             ->where('CODE', 'E')
             ->get();
         $profit_loss = $activityr[0]->Balance - $activitye[0]->Balance;
@@ -4752,16 +4669,16 @@ class Accounts extends Controller
         if (count($role) > 0) {
 
 
-            return redirect('RoleView/' . $UserID)->with('error', '$2 updated Successfully')->with('class', 'success');
+            return redirect('RoleView/' . $UserID)->with('success', '$2 updated Successfully');
         } else {
 
-            return redirect('Role/' . $UserID)->with('error', '$2 updated Successfully')->with('class', 'success');
+            return redirect('Role/' . $UserID)->with('success', '$2 updated Successfully');
         }
     }
     public  function Logout()
     {
-        Session::flush(); // removes all session data
-        return redirect('/')->with('error', 'Logout Successfully.')->with('class', 'success');
+        Session::flush(); // removes all Session data
+        return redirect('/')->with('success', 'Logout Successfully.');
     }
 
     public function Payment()
@@ -4774,7 +4691,7 @@ class Accounts extends Controller
     }
     public function ajax_payment(Request $request)
     {
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Vouchers';
         if ($request->ajax()) {
             $data = DB::table('v_payment')->orderBy('PaymentMasterID')->get();
@@ -4846,30 +4763,13 @@ class Accounts extends Controller
     }
 
 
-    public function PaymentSave(request $request)
+    public function PaymentSave(Request $request)
     {
-
-
-        // dd($request->all());
-        // $employee = DB::table('employee')->get();
-        // return view ('');
-        $request->PaymentDate = dateformatpc($request->PaymentDate);
-
-
-
-
+        $PaymentDate = dateformatpc($request->PaymentDate);
         if ($request->hasfile('UploadSlip')) {
-
             $this->validate($request, [
-
-                // 'file' => 'required|mimes:jpeg,png,jpg,gif,svg,xlsx,pdf|max:1000',
                 'UploadSlip' => 'image|mimes:jpeg,png,jpg,gif,pdf,doc,docx',
-
             ]);
-
-
-
-
             $file = $request->file('UploadSlip');
             $input['filename'] = time() . '.' . $file->extension();
 
@@ -4887,7 +4787,7 @@ class Accounts extends Controller
                 'PaymentMasterID' => $request->PaymentMasterID,
                 'PartyID' => $request->PartyID,
                 'PaymentAmount' => $request->PaymentAmount,
-                'PaymentDate' => $request->PaymentDate,
+                'PaymentDate' => $PaymentDate,
                 'PaymentMode' => $request->PaymentMode,
                 'ChartOfAccountID' => $request->ChartOfAccountID,
                 'ReferenceNo' => $request->ReferenceNo,
@@ -4900,7 +4800,7 @@ class Accounts extends Controller
                 'PaymentMasterID' => $request->PaymentMasterID,
                 'PartyID' => $request->PartyID,
                 'PaymentAmount' => $request->PaymentAmount,
-                'PaymentDate' => $request->PaymentDate,
+                'PaymentDate' => $PaymentDate,
                 'PaymentMode' => $request->PaymentMode,
                 'ChartOfAccountID' => $request->ChartOfAccountID,
                 'ReferenceNo' => $request->ReferenceNo,
@@ -4994,7 +4894,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('Payment')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('Payment')->with('success', 'Saved Successfully');
     }
 
 
@@ -5008,7 +4908,7 @@ class Accounts extends Controller
         $id2 = DB::table('payment_detail')->where('PaymentMasterID', $id)->delete();
         $id3 = DB::table('journal')->where('VHNO', 'PAY-' . $id)->delete();
 
-        return redirect('Payment')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('Payment')->with('success', 'Deleted Successfully');
     }
 
 
@@ -5023,7 +4923,7 @@ class Accounts extends Controller
     }
     public function ajax_deliverychallan(Request $request)
     {
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Delivery Challan';
         if ($request->ajax()) {
             $data = DB::table('v_challan_master')->orderBy('ChallanMasterID')->get();
@@ -5072,17 +4972,17 @@ class Accounts extends Controller
             ->get();
 
 
-        session::put('VHNO', 'DC-' . $challan_master[0]->ChallanMasterID);
+        Session::put('VHNO', 'DC-' . $challan_master[0]->ChallanMasterID);
 
         $challan_type = DB::table('challan_type')->get();
         return view('ebooks.challan_create', compact('chartofacc', 'party', 'pagetitle', 'challan_master', 'items', 'item', 'challan_type', 'user'));
     }
 
-    public  function DeliveryChallanSave(request $request)
+    public  function DeliveryChallanSave(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -5114,7 +5014,7 @@ class Accounts extends Controller
             'GrandTotal' => $request->Grandtotal,
             'Paid' => $request->amountPaid,
             'Balance' => $request->amountDue,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -5150,7 +5050,7 @@ class Accounts extends Controller
         // end foreach
 
 
-        return redirect('DeliveryChallan')->with('error', 'Challan Saved')->with('class', 'success');
+        return redirect('DeliveryChallan')->with('success', 'Challan Saved');
     }
     public function DeliveryChallanView($id)
     {
@@ -5159,7 +5059,7 @@ class Accounts extends Controller
         $challan_detail = DB::table('v_challan_detail')->where('ChallanMasterID', $id)->get();
         $company = DB::table('company')->get();
 
-        session()->forget('VHNO');
+        Session()->forget('VHNO');
 
         Session::put('VHNO', $challan[0]->ChallanNo);
 
@@ -5206,7 +5106,7 @@ class Accounts extends Controller
         $challan_master = DB::table('challan_master')->where('ChallanMasterID', $id)->get();
         $challan_detail = DB::table('challan_detail')->where('ChallanMasterID', $id)->get();
 
-        session()->forget('VHNO');
+        Session()->forget('VHNO');
 
         Session::put('VHNO', $challan_master[0]->ChallanNo);
 
@@ -5214,11 +5114,11 @@ class Accounts extends Controller
 
         return view('ebooks.challan_edit', compact('chartofacc', 'party', 'pagetitle', 'challan_master', 'items', 'item', 'challan_type', 'user', 'challan_master', 'challan_detail'));
     }
-    public  function DeliveryChallanUpdate(request $request)
+    public  function DeliveryChallanUpdate(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -5249,7 +5149,7 @@ class Accounts extends Controller
             'GrandTotal' => $request->Grandtotal,
             'Paid' => $request->amountPaid,
             'Balance' => $request->amountDue,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -5289,7 +5189,7 @@ class Accounts extends Controller
         // end foreach
 
 
-        return redirect('DeliveryChallan')->with('error', 'Challan Saved')->with('class', 'success');
+        return redirect('DeliveryChallan')->with('success', 'Challan Saved');
     }
     public function DeliveryChallanDelete($id)
     {
@@ -5301,7 +5201,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('DeliveryChallan')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('DeliveryChallan')->with('success', 'Deleted Successfully');
     }
     // sale invoice
     public  function SalesInvoiceCreate()
@@ -5311,7 +5211,7 @@ class Accounts extends Controller
 
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $item = json_encode($items);
@@ -5327,7 +5227,7 @@ class Accounts extends Controller
             ->select(DB::raw('LPAD(IFNULL(MAX(right(InvoiceNo,5)),0)+1,5,0) as VHNO '))->whereIn(DB::raw('left(InvoiceNo,3)'), ['TAX'])->get();
 
         $chartofaccount = DB::table('chartofaccount')->whereNotNull('Category')->get();
-        session::put('VHNO', 'TAX-' . $vhno[0]->VHNO);
+        Session::put('VHNO', 'TAX-' . $vhno[0]->VHNO);
 
         $lims_warehouse_list = Warehouse::where('is_active', true)->get();
 
@@ -5342,11 +5242,11 @@ class Accounts extends Controller
 
 
 
-    public  function SaleInvoiceSave(request $request)
+    public  function SaleInvoiceSave(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -5380,7 +5280,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -5607,13 +5507,13 @@ class Accounts extends Controller
 
         // end of journal entries
 
-        return redirect('Invoice')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Invoice Saved');
     }
     public  function SaleInvoiceEdit($id)
     {
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $invoice_master = DB::table('invoice_master')->where('InvoiceMasterID', $id)->get();
@@ -5624,8 +5524,8 @@ class Accounts extends Controller
         $user = DB::table('user')->get();
         $tax = DB::table('tax')->where('Section', 'Invoice')->get();
 
-        session()->forget('VHNO');
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session()->forget('VHNO');
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
 
         $lims_warehouse_list = Warehouse::where('is_active', true)->get();
 
@@ -5636,11 +5536,11 @@ class Accounts extends Controller
         return view('sale_invoice_edit', compact('invoice_type', 'items', 'vhno', 'party', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'tax', 'lims_warehouse_list'));
     }
 
-    public  function SaleInvoiceUpdate(request $request)
+    public  function SaleInvoiceUpdate(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -5679,7 +5579,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -5884,13 +5784,13 @@ class Accounts extends Controller
 
 
 
-        return redirect('Invoice')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Invoice Saved');
     }
     public  function SaleInvoiceView($id)
     {
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $company = DB::table('company')->get();
@@ -5905,8 +5805,8 @@ class Accounts extends Controller
             ->get();
 
 
-        session()->forget('VHNO');
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session()->forget('VHNO');
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
 
         return view('sale_invoice_view', compact('invoice_type', 'items', 'vhno', 'party', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'company'));
     }
@@ -5917,7 +5817,7 @@ class Accounts extends Controller
         $pagetitle = 'Sales Invoice';
 
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $company = DB::table('company')->get();
         $invoice_master = DB::table('v_invoice_master')->where('InvoiceMasterID', $id)->get();
         $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
@@ -5942,7 +5842,7 @@ class Accounts extends Controller
 
         // delete from journal too
 
-        return redirect('Invoice')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('Invoice')->with('success', 'Deleted Successfully');
     }
     public function CreditNote()
     {
@@ -5955,7 +5855,7 @@ class Accounts extends Controller
 
     public function ajax_creditnote(Request $request)
     {
-        session::put('menu', 'CreditNote');
+        Session::put('menu', 'CreditNote');
         $pagetitle = 'Delivery Challan';
         if ($request->ajax()) {
             $data = DB::table('v_invoice_master')->orderBy('InvoiceMasterID')->where('InvoiceNo', 'like', 'CN%')->get();
@@ -5995,7 +5895,7 @@ class Accounts extends Controller
     {
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $item = json_encode($items);
@@ -6008,15 +5908,15 @@ class Accounts extends Controller
 
         $lims_warehouse_list = Warehouse::where('is_active', true)->get();
 
-        session::put('VHNO', 'CN-' . $vhno[0]->VHNO);
+        Session::put('VHNO', 'CN-' . $vhno[0]->VHNO);
 
         return view('ebooks.credit_note_create', compact('invoice_type', 'items', 'vhno', 'party', 'pagetitle', 'item', 'user', 'lims_warehouse_list'));
     }
-    public  function CreditNoteSave(request $request)
+    public  function CreditNoteSave(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -6049,7 +5949,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -6257,7 +6157,7 @@ class Accounts extends Controller
 
         // end of journal entries
 
-        return redirect('CreditNote')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('CreditNote')->with('success', 'Invoice Saved');
     }
 
 
@@ -6265,7 +6165,7 @@ class Accounts extends Controller
     {
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $invoice_master = DB::table('invoice_master')->where('InvoiceMasterID', $id)->get();
@@ -6280,18 +6180,18 @@ class Accounts extends Controller
             ->get();
 
 
-        session::forget('VHNO');
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session::forget('VHNO');
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
 
 
         return view('ebooks.credit_note_edit', compact('invoice_type', 'items', 'vhno', 'party', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'lims_warehouse_list'));
     }
 
-    public  function CreditNoteUpdate(request $request)
+    public  function CreditNoteUpdate(Request $request)
     {
         // dd($request->all());
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        // $allow= check_role(session::get('UserID'),'Invoice','Create');
+        // $allow= check_role(Session::get('UserID'),'Invoice','Create');
         // if($allow[0]->Allow=='N')
         // {
         //   return redirect()->back()->with('error', 'You access is limited')->with('class','danger');
@@ -6324,7 +6224,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -6550,7 +6450,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('CreditNote')->with('error', 'Credit Note Saved')->with('class', 'success');
+        return redirect('CreditNote')->with('success', 'Credit Note Saved');
     }
 
 
@@ -6565,7 +6465,7 @@ class Accounts extends Controller
 
         // delete from journal too
 
-        return redirect('CreditNote')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('CreditNote')->with('success', 'Deleted Successfully');
     }
 
 
@@ -6574,7 +6474,7 @@ class Accounts extends Controller
     {
         $pagetitle = 'Sales Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
         $items = DB::table('item')->get();
         $company = DB::table('company')->get();
@@ -6589,8 +6489,8 @@ class Accounts extends Controller
             ->get();
 
 
-        session::forget('VHNO');
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session::forget('VHNO');
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
 
         return view('ebooks.credit_note_view', compact('invoice_type', 'items', 'vhno', 'party', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'company'));
     }
@@ -6601,7 +6501,7 @@ class Accounts extends Controller
         $pagetitle = 'Credit Note';
 
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $company = DB::table('company')->get();
         $invoice_master = DB::table('v_invoice_master')->where('InvoiceMasterID', $id)->get();
         $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
@@ -6635,7 +6535,7 @@ class Accounts extends Controller
 
         $pagetitle = 'Report';
 
-        return view('ebooks.reports.blank_report', compact('pagetitle'))->with('error', 'Logout Successfully.')->with('class', 'success');
+        return view('ebooks.reports.blank_report', compact('pagetitle'))->with('success', 'Logout Successfully.');
     }
 
     public function DebitNoteCreate()
@@ -6656,7 +6556,7 @@ class Accounts extends Controller
             ->select(DB::raw('LPAD(IFNULL(MAX(right(InvoiceNo,5)),0)+1,5,0) as VHNO '))
             ->where(DB::raw('left(InvoiceNo,2)'), 'DN')->get();
 
-        session::put('VHNO', 'DN-' . $vhno[0]->VHNO);
+        Session::put('VHNO', 'DN-' . $vhno[0]->VHNO);
 
         // $items=DB::table('product')->get();
         return view('purchase.debit_note_create', compact('supplier', 'lims_warehouse_list',  'items', 'user', 'vhno', 'item', 'items', 'pagetitle'));
@@ -6689,7 +6589,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -6870,7 +6770,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('DebitNote')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('DebitNote')->with('success', 'Invoice Saved');
     }
 
 
@@ -6883,7 +6783,7 @@ class Accounts extends Controller
 
     {
 
-        session::put('menu', 'Bill');
+        Session::put('menu', 'Bill');
         $pagetitle = 'Bill';
         if ($request->ajax()) {
             $data = DB::table('v_invoice_master_supplier')->orderBy('InvoiceMasterID')->where('InvoiceNo', 'like', 'DN%')->get();;
@@ -6942,7 +6842,7 @@ class Accounts extends Controller
     {
         $pagetitle = 'Bill Invoice';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
 
         $items = DB::table('item')->get();
@@ -6951,9 +6851,9 @@ class Accounts extends Controller
         $invoice_master = DB::table('v_invoice_master_supplier')->where('InvoiceMasterID', $id)->get();
         $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
 
-        session()->forget('VHNO');
+        Session()->forget('VHNO');
 
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
         $item = json_encode($items);
         // dd($item);
         $supplier = DB::table('supplier')->get();
@@ -6971,7 +6871,7 @@ class Accounts extends Controller
         $pagetitle = 'Sales Invoice';
 
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $company = DB::table('company')->get();
         $invoice_master = DB::table('v_invoice_master_supplier')->where('InvoiceMasterID', $id)->get();
         $invoice_detail = DB::table('v_invoice_detail')->where('InvoiceMasterID', $id)->get();
@@ -6993,7 +6893,7 @@ class Accounts extends Controller
     {
         $pagetitle = 'Debit Note';
 
-        session::put('menu', 'SalesInvoice');
+        Session::put('menu', 'SalesInvoice');
         $invoice_type = DB::table('invoice_type')->get();
 
         $items = DB::table('item')->get();
@@ -7012,9 +6912,9 @@ class Accounts extends Controller
             ->get();
 
 
-        session()->forget('VHNO');
+        Session()->forget('VHNO');
 
-        session::put('VHNO', $invoice_master[0]->InvoiceNo);
+        Session::put('VHNO', $invoice_master[0]->InvoiceNo);
 
 
         return view('purchase.debit_note_edit', compact('invoice_type', 'items', 'vhno', 'supplier', 'pagetitle', 'item', 'user', 'invoice_master', 'invoice_detail', 'lims_warehouse_list'));
@@ -7051,7 +6951,7 @@ class Accounts extends Controller
             'Balance' => $request->amountDue,
             'CustomerNotes' => $request->CustomerNotes,
             'DescriptionNotes' => $request->DescriptionNotes,
-            'UserID' => session::get('UserID'),
+            'UserID' => Session::get('UserID'),
         );
         // dd($challan_mst);
         // $id= DB::table('')->insertGetId($data);
@@ -7244,7 +7144,7 @@ class Accounts extends Controller
             $journal_entry = DB::table('journal')->insertGetId($data_ar_credit);
         }
 
-        return redirect('DebitNote')->with('error', 'Invoice Saved')->with('class', 'success');
+        return redirect('DebitNote')->with('success', 'Invoice Saved');
     }
 
     public function DebitNoteDelete($id)
@@ -7258,7 +7158,7 @@ class Accounts extends Controller
 
         // delete from journal too
 
-        return redirect('DebitNote')->with('error', 'Deleted Successfully')->with('class', 'danger');
+        return redirect('DebitNote')->with('error', 'Deleted Successfully');
     }
 
     // purchase payment
@@ -7273,7 +7173,7 @@ class Accounts extends Controller
     public function ajax_purchasepaymenttable(Request $request)
     // ajax datatable for purchase payment
     {
-        session::put('menu', 'Vouchers');
+        Session::put('menu', 'Vouchers');
         $pagetitle = 'Purchase Payment';
         if ($request->ajax()) {
             $data = DB::table('v_purchase_payment')->orderBy('PurchasePaymentMasterID')->get();
@@ -7321,9 +7221,6 @@ class Accounts extends Controller
         $payment_detail = DB::table('purchasepayment_detail')->where('PurchasePaymentMasterID', $id)->get();
 
         return view('ebooks.purchase_payment_view_pdf', compact('pagetitle', 'company', 'payment_master', 'payment_detail'));
-        //return $pdf->download('pdfview.pdf');
-        $pdf->setpaper('A4', 'portiate');
-        return $pdf->stream();
     }
 
 
@@ -7340,9 +7237,6 @@ class Accounts extends Controller
         $v_payment_detail = DB::table('v_payment_detail')->get();
 
         return view('ebooks.payment_view_pdf', compact('payment_summary', 'pagetitle', 'company', 'payment_master', 'v_payment_detail'));
-        //return $pdf->download('pdfview.pdf');
-        $pdf->setpaper('A4', 'portiate');
-        return $pdf->stream();
     }
 
 
@@ -7364,7 +7258,7 @@ class Accounts extends Controller
         return view('ebooks.purchase_payment_create', compact('chartofacc', 'supplier', 'pagetitle', 'purchasepayment', 'payment_mode'));
     }
 
-    public  function Ajax_SupplierInvoices(request $request)
+    public  function Ajax_SupplierInvoices(Request $request)
     {
 
 
@@ -7412,7 +7306,7 @@ class Accounts extends Controller
 
 
 
-    public function PurchasePaymentSave(request $request)
+    public function PurchasePaymentSave(Request $request)
     {
 
 
@@ -7558,7 +7452,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('PurchasePayment')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('PurchasePayment')->with('success', 'Saved Successfully');
     }
 
 
@@ -7572,7 +7466,7 @@ class Accounts extends Controller
         $id2 = DB::table('purchasepayment_detail')->where('PurchasePaymentMasterID', $id)->delete();
         $id3 = DB::table('journal')->where('VHNO', 'BILLPAY-' . $id)->delete();
 
-        return redirect('PurchasePayment')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('PurchasePayment')->with('success', 'Deleted Successfully');
     }
     function Attachment()
     {
@@ -7613,7 +7507,7 @@ class Accounts extends Controller
         $directory = 'documents';
         $files_info = [];
 
-        $file_name = session::get('VHNO');;
+        $file_name = Session::get('VHNO');;
 
         $image = DB::table('attachment')->where('InvoiceNo', $file_name)->get();
 
@@ -7647,7 +7541,7 @@ class Accounts extends Controller
         if (file_exists($path)) {
             unlink($path);
         }
-        return redirect('Attachment')->with('error', 'File Deleted')->with('class', 'success');
+        return redirect('Attachment')->with('success', 'File Deleted');
     }
 
     public function DailyIncomeExpense()
@@ -7656,11 +7550,11 @@ class Accounts extends Controller
             $pagetitle = 'Daily Income / Expense';
             return view('daily_income_expense', compact('pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
-    public  function DailyIncomeExpense1PDF(request $request)
+    public  function DailyIncomeExpense1PDF(Request $request)
     {
         try {
             $company = DB::table('company')->get();
@@ -7697,7 +7591,7 @@ class Accounts extends Controller
             // return $pdf->download($filename.'.pdf');
             return $pdf->stream();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -7757,24 +7651,24 @@ class Accounts extends Controller
 
     public function ReconcileReport()
     {
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
         $chartofaccount = DB::table('chartofaccount')
             ->whereIn('ChartOfAccountID', [110101, 110250, 110201, 110101])
             ->get();
         return view('reconcile_report', compact('pagetitle', 'chartofaccount'));
     }
-    public function ReconcileReport1(request $request)
+    public function ReconcileReport1(Request $request)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
-        $allow = check_role(session::get('UserID'), 'General Ledger', 'View');
+        $allow = check_role(Session::get('UserID'), 'General Ledger', 'View');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         // dd($request->all());
 
-        session::put('menu', 'GeneralLedger');
+        Session::put('menu', 'GeneralLedger');
         $pagetitle = 'General Ledger';
 
 
@@ -7839,7 +7733,7 @@ class Accounts extends Controller
         return view('tax_report_supplier', compact('pagetitle'));
     }
 
-    public function TaxReportSupplier1(request $request)
+    public function TaxReportSupplier1(Request $request)
     {
         $pagetitle = 'Supplier Tax ';
 
@@ -7856,7 +7750,7 @@ class Accounts extends Controller
 
 
 
-    public function TaxReportSupplier1PDF(request $request)
+    public function TaxReportSupplier1PDF(Request $request)
     {
         $pagetitle = 'Supplier Tax ';
 
@@ -7936,7 +7830,7 @@ class Accounts extends Controller
         return view('bulk_payment_create', compact('party', 'pagetitle'));
     }
 
-    public function BulkPaymentSearch(request $request)
+    public function BulkPaymentSearch(Request $request)
     {
         $pagetitle = 'Bulk Payment Search';
         $party = DB::table('party')->where('PartyID', $request->PartyID)->get();
@@ -7968,7 +7862,7 @@ class Accounts extends Controller
     }
 
 
-    public function BulkPaymentSave(request $request)
+    public function BulkPaymentSave(Request $request)
     {
 
 
@@ -7977,7 +7871,7 @@ class Accounts extends Controller
         // return view ('');
 
         // $request->PaymentDate=dateformatpc($request->PaymentDate);
-        $request->PaymentDate = dateformatpc($request->PaymentDate);
+        $PaymentDate = dateformatpc($request->PaymentDate);
 
         // dd($request->PaymentDate);
 
@@ -8010,7 +7904,7 @@ class Accounts extends Controller
                 'PaymentMasterID' => $request->PaymentMasterID,
                 'PartyID' => $request->PartyID,
                 'PaymentAmount' => $request->PaymentAmount,
-                'PaymentDate' => $request->PaymentDate,
+                'PaymentDate' => $PaymentDate,
                 'PaymentMode' => $request->PaymentMode,
                 'ChartOfAccountID' => $request->ChartOfAccountIDIN,
                 'ReferenceNo' => $request->ReferenceNo,
@@ -8023,7 +7917,7 @@ class Accounts extends Controller
                 'PaymentMasterID' => $request->PaymentMasterID,
                 'PartyID' => $request->PartyID,
                 'PaymentAmount' => $request->PaymentAmount,
-                'PaymentDate' => $request->PaymentDate,
+                'PaymentDate' => $PaymentDate,
                 'PaymentMode' => $request->PaymentMode,
                 'ChartOfAccountID' => $request->ChartOfAccountIDIN,
                 'ReferenceNo' => $request->ReferenceNo,
@@ -8126,7 +8020,7 @@ class Accounts extends Controller
 
 
 
-        return redirect('Payment')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('Payment')->with('success', 'Saved Successfully');
     }
 
 
@@ -8148,7 +8042,7 @@ class Accounts extends Controller
         return view('inventory', compact('pagetitle', 'warehouses'));
     }
 
-    public  function Inventory1(request $request)
+    public  function Inventory1(Request $request)
     {
 
         $pagetitle = 'Inventory';
@@ -8168,7 +8062,7 @@ class Accounts extends Controller
 
 
 
-    public  function Inventory1PDF(request $request)
+    public  function Inventory1PDF(Request $request)
     {
 
         $pagetitle = 'Inventory';
@@ -8207,18 +8101,18 @@ class Accounts extends Controller
         $pdf->setpaper('A4', 'landscape');
         return $pdf->stream();
     }
-    public  function DBDump()
-    {
-        $databaseName = env('DB_DATABASE');
-        $userName = env('DB_USERNAME');
-        $password = env('DB_PASSWORD');
-        Spatie\DbDumper\Databases\MySql::create()
-            ->setDbName($databaseName)
-            ->setUserName($userName)
-            ->setPassword($password)
-            ->dumpToFile('dump.sql');
-    }
-    
+    // public  function DBDump()
+    // {
+    //     $databaseName = env('DB_DATABASE');
+    //     $userName = env('DB_USERNAME');
+    //     $password = env('DB_PASSWORD');
+    //     Spatie\DbDumper\Databases\MySql::create()
+    //         ->setDbName($databaseName)
+    //         ->setUserName($userName)
+    //         ->setPassword($password)
+    //         ->dumpToFile('dump.sql');
+    // }
+
     public function saleReportCSV(Request $request)
     {
         try {
@@ -8265,7 +8159,7 @@ class Accounts extends Controller
             };
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 } // end of controller

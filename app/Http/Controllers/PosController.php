@@ -20,14 +20,13 @@ use DNS1D;
 use DNS2D;
 use Keygen;
 use Image;
-use PDF;
-
 use App\Models\Item;
 use App\Models\Dish;
 use App\Models\DishType;
 use App\Models\DishTable;
 use App\Models\InvoiceDishDetail;
 use App\Models\ItemCategory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
@@ -48,7 +47,7 @@ class PosController extends Controller
             $payments            = Payment::where('InvoiceMasterID', $InvoiceMasterID)->first();
             return view('invoice.show_invoice', compact('invoice_detail', 'invoice_master', 'party', 'invoice_dish_detail', 'payments'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -113,7 +112,7 @@ class PosController extends Controller
                 return view('invoice.print_voucher_no_price', compact('lims_sale_data', 'lims_product_sale_data', 'lims_product_dish_data', 'lims_biller_data', 'lims_warehouse_data', 'lims_customer_data', 'lims_payment_data', 'numberInWords', 'company'));
             }
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -330,7 +329,7 @@ class PosController extends Controller
         $input = $request->all();
         $input['is_active'] = true;
         Warehouse::create($input);
-        return redirect('ware-house-list')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('ware-house-list')->with('success', 'Saved Successfully');
     }
 
     public function getWarehouseDetail(Request $request)
@@ -360,7 +359,7 @@ class PosController extends Controller
         $lims_warehouse_data = Warehouse::find($input['warehouse_id']);
         $lims_warehouse_data->update($input);
 
-        return redirect('ware-house-list')->with('error', 'Updated Successfully')->with('class', 'success');
+        return redirect('ware-house-list')->with('success', 'Updated Successfully');
     }
 
     public function deleteWareHouse($id)
@@ -368,7 +367,7 @@ class PosController extends Controller
         $lims_warehouse_data = Warehouse::find($id);
         $lims_warehouse_data->is_active = false;
         $lims_warehouse_data->save();
-        return redirect('ware-house-list')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('ware-house-list')->with('success', 'Deleted Successfully');
     }
 
 
@@ -768,7 +767,7 @@ class PosController extends Controller
         if (isset($request->value_ajax)) {
             return response()->json(['message' => 'Brand Added Successfully', 'data' => $data]);
         } else {
-            return redirect('brand-list')->with('error', 'Saved Successfully')->with('class', 'success');
+            return redirect('brand-list')->with('success', 'Saved Successfully');
         }
     }
 
@@ -807,7 +806,7 @@ class PosController extends Controller
             $lims_brand_data->image = $imageName;
         }
         $lims_brand_data->save();
-        return redirect('brand-list')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('brand-list')->with('success', 'Saved Successfully');
     }
 
     public function deleteBrand($id)
@@ -815,7 +814,7 @@ class PosController extends Controller
         $lims_brand_data = Brand::findOrFail($id);
         $lims_brand_data->is_active = false;
         $lims_brand_data->save();
-        return redirect('brand-list')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('brand-list')->with('success', 'Deleted Successfully');
     }
 
     public function unitList(Request $request)
@@ -857,7 +856,7 @@ class PosController extends Controller
         ]);
         $input = $request->all();
         Unit::create($input);
-        return redirect('unit-list')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('unit-list')->with('success', 'Saved Successfully');
     }
 
     public function getUnitDetail(Request $request)
@@ -881,14 +880,14 @@ class PosController extends Controller
         $input = $request->all();
         $lims_unit_data = Unit::where('id', $input['unit_id'])->first();
         $lims_unit_data->update($input);
-        return redirect('unit-list')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('unit-list')->with('success', 'Saved Successfully');
     }
 
     public function deleteUnit($id)
     {
         $lims_unit_data = Unit::findOrFail($id);
         $lims_unit_data->delete();
-        return redirect('unit-list')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('unit-list')->with('success', 'Deleted Successfully');
     }
 
     public function itemCategoryList(Request $request)
@@ -922,7 +921,7 @@ class PosController extends Controller
                 ->rawColumns(['image', 'parent_cat', 'number_of_product', 'stock_qty', 'stock_worth', 'action'])
                 ->make(true);
         }
-        return view('item_category_list', compact('item_categories'));
+        return view('item.item_category_list', compact('item_categories'));
     }
     public function getItemCategoryDetail(Request $request)
     {
@@ -979,11 +978,11 @@ class PosController extends Controller
             if (isset($request->value_ajax)) {
                 return response()->json(['message' => 'Item Category Added Successfully', 'data' => $data]);
             } else {
-                return redirect('item-category-list')->with('error', 'Saved Successfully')->with('class', 'success');
+                return redirect('item-category-list')->with('success', 'Saved Successfully');
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -1030,10 +1029,10 @@ class PosController extends Controller
                 );
             }
             ItemCategory::find($request->itemCategoryId)->update($data);
-            return redirect('item-category-list')->with('error', 'Updated Successfully')->with('class', 'success');
+            return redirect('item-category-list')->with('success', 'Updated Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -1044,10 +1043,10 @@ class PosController extends Controller
             DB::beginTransaction();
             ItemCategory::find($id)->delete();
             DB::commit();
-            return redirect('item-category-list')->with('error', 'Deleted Successfully')->with('class', 'success');
+            return redirect('item-category-list')->with('success', 'Deleted Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -1081,7 +1080,7 @@ class PosController extends Controller
 
         $data = $request->all();
         Currency::create($data);
-        return redirect('currency-list')->with('error', 'Currency Saved Successfully')->with('class', 'success');
+        return redirect('currency-list')->with('success', 'Currency Saved Successfully');
     }
 
     public function getCurrencyDetail(Request $request)
@@ -1100,13 +1099,13 @@ class PosController extends Controller
 
         $data = $request->all();
         Currency::find($data['currency_id'])->update($data);
-        return redirect('currency-list')->with('error', 'Currency Updated Successfully')->with('class', 'success');
+        return redirect('currency-list')->with('success', 'Currency Updated Successfully');
     }
 
     public function deleteCurrency($id)
     {
         Currency::find($id)->delete();
-        return redirect('currency-list')->with('error', 'Currency Deleted Successfully')->with('class', 'success');
+        return redirect('currency-list')->with('success', 'Currency Deleted Successfully');
     }
 
     public function taxList(Request $request)
@@ -1143,7 +1142,7 @@ class PosController extends Controller
         $input = $request->all();
         $input['is_active'] = true;
         Tax::create($input);
-        return redirect('tax-list')->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect('tax-list')->with('success', 'Saved Successfully');
     }
 
     public function getTaxDetail(Request $request)
@@ -1168,7 +1167,7 @@ class PosController extends Controller
         $input = $request->all();
         $lims_tax_data = Tax::where('id', $input['tax_id'])->first();
         $lims_tax_data->update($input);
-        return redirect('tax-list')->with('error', 'Updated Successfully')->with('class', 'success');
+        return redirect('tax-list')->with('success', 'Updated Successfully');
     }
 
     public function deleteTax($id)
@@ -1176,7 +1175,7 @@ class PosController extends Controller
         $lims_tax_data = Tax::findOrFail($id);
         $lims_tax_data->is_active = false;
         $lims_tax_data->save();
-        return redirect('tax-list')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('tax-list')->with('success', 'Deleted Successfully');
     }
 
     public function posSetting()
@@ -1213,7 +1212,7 @@ class PosController extends Controller
         else
             $pos_setting->keybord_active = true;
         $pos_setting->save();
-        return redirect('pos-setting')->with('error', 'Updated Successfully')->with('class', 'success');
+        return redirect('pos-setting')->with('success', 'Updated Successfully');
     }
 
     public function storeParty(Request $request)
@@ -1244,9 +1243,9 @@ class PosController extends Controller
         }
 
         // if ($lims_customer_data['pos'])
-        //     return redirect('create-voucher')->with('error', 'Customer Saved Successfully')->with('class', 'success');
+        //     return redirect('create-voucher')->with('error', 'Customer Saved Successfully');
         // else
-        //     return redirect()->back()->with('error', 'Something Went Wrong')->with('class', 'danger');
+        //     return redirect()->back()->with('error', 'Something Went Wrong');
     }
 
     public function printBarcode()

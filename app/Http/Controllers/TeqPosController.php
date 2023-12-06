@@ -3,23 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Validation\Rule;
-use App\Models\Category;
-use App\Models\Product;
 use App\Models\Item;
-use App\Models\ProductVariant;
-use App\Models\ProductBatch;
-use App\Models\Customer;
 use App\Models\CustomerGroup;
-use App\Models\Sale;
 use App\Models\Warehouse;
 use App\Models\PosSetting;
 use App\Models\Brand;
-use App\Models\Unit;
 use App\Models\Coupon;
 use App\Models\Tax;
-use App\Models\Product_Sale;
 use App\Models\InvoiceDishDetail;
 use App\Models\Payment;
 use App\Models\Dish;
@@ -27,22 +17,14 @@ use App\Models\DishType;
 use App\Models\DishTable;
 use App\Models\PaymentWithCreditCard;
 use Stripe\Stripe;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
-/* use Keygen\Keygen;
-use DNS1D;
-use DNS2D; */
 use App\CashRegister;
 use App\Models\InvoiceDetail;
 use App\Models\TempInvoiceDetail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Carbon;
 use App\Models\InvoiceMaster;
 use App\Models\Journal;
-
-
-
+use Illuminate\Support\Facades\Validator;
 
 class TeqPosController extends Controller
 {
@@ -308,11 +290,11 @@ class TeqPosController extends Controller
             $message = ' Sale created successfully';
 
         if ($data['sale_status'] == '1' && $data['print_status'] == '1')
-            return redirect(route('invoice.print', ['id' => $lims_sale_data]))->with('message', $message);
+            return redirect(route('invoice.print', ['id' => $lims_sale_data]))->with('success', $message);
         elseif ($data['sale_status'] == '1' && $data['print_status'] == '0')
-            return redirect(route('invoice.create'))->with('message', $message);
+            return redirect(route('invoice.create'))->with('success', $message);
         else
-            return redirect()->back()->with('message', $message);
+            return redirect()->back()->with('success', $message);
     }
 
 
@@ -374,7 +356,7 @@ class TeqPosController extends Controller
             return view('teq-invoice.edit-voucher', compact('lims_customer_list', 'lims_warehouse_list', 'lims_biller_list', 'lims_tax_list', 'lims_sale_data', 'lims_product_sale_data', 'dish_invoices', 'biller', 'lims_pos_setting_data', 'dish_tables', 'lims_customer_group_all',  'lims_product_list', 'product_number',  'lims_brand_list', 'lims_category_list', 'recent_sale', 'recent_draft', 'lims_coupon_list', 'flag', 'invoice_no', 'dishes', 'resturantItems'));
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -432,7 +414,7 @@ class TeqPosController extends Controller
                 } else {
                     // dd('here');
                     // DB::rollBack();
-                    return redirect('/')->with('error', 'You are not logged in, Login to Continue using the System')->with('class', 'danger');
+                    return redirect('/')->with('error', 'You are not logged in, Login to Continue using the System');
                 }
                 $destinationPath = public_path('/uploads');
                 $subTotal = 0;
@@ -581,13 +563,13 @@ class TeqPosController extends Controller
                 // dd(DB::transactionLevel());
                 DB::commit();
                 TempInvoiceDetail::truncate();
-                return redirect('create-voucher')->with('message', 'Data Updated Successfully');
+                return redirect('create-voucher')->with('success', 'Data Updated Successfully');
             } catch (\Exception $e) {
                 DB::rollBack();
-                return back()->with('message', $e->getMessage());
+                return back()->with('error', $e->getMessage());
             }
         } else {
-            return redirect('/')->with('error', 'You are Logged Out, Login to continue using the System')->with('class', 'danger');
+            return redirect('/')->with('error', 'You are Logged Out, Login to continue using the System');
         }
     }
 
@@ -635,9 +617,9 @@ class TeqPosController extends Controller
 
 
             $message = 'Payment created successfully';
-            return redirect()->back()->with('message', $message);
+            return redirect()->back()->with('success', $message);
         } else {
-            return redirect()->back()->with('message', 'No payment paid.');
+            return redirect()->back()->with('error', 'No payment paid.');
         }
     }
 
@@ -914,10 +896,10 @@ class TeqPosController extends Controller
         $id = $request->sale_id;
         // dd($id);
 
-        $lims_user_data = DB::table('invoice_master')->where('InvoiceMasterID', $InvoiceMasterID)->first();
+        $lims_user_data = DB::table('invoice_master')->where('InvoiceMasterID', $id)->first();
         $lims_user_data->update($input);
         // return response()->json(['success'=>'Product saved successfully.']);
-        return redirect()->back()->with('sale.invoice3', 'Data updated successfullly');
+        return redirect()->back()->with('success', 'Data updated successfullly');
         // return 'hello';
     }
 
@@ -936,9 +918,9 @@ class TeqPosController extends Controller
             DB::table('journal')->where('InvoiceMasterID', $request->InvoiceMasterID)->delete();
             Payment::where('InvoiceMasterID', $request->InvoiceMasterID)->delete();
             DB::table('invoice_master')->where('InvoiceMasterID', $request->InvoiceMasterID)->update(['sale_status' => 10]);
-            return redirect()->back()->with('error', 'Order Cancelled')->with('class', 'success');
+            return redirect()->back()->with('success', 'Order Cancelled');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 }

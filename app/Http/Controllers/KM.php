@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+
 class KM extends Controller
 {
     /**
@@ -17,26 +18,17 @@ class KM extends Controller
     }
 
 
-public function welcome2()
-{
- 
-    return view ('welcome');
-}
+    public function welcome2()
+    {
 
-public function Login()
-{
-// Encrypt the message 'Hello, Universe'.
-// $encrypted = Crypt::encrypt('Hello, Universe');
-// echo $encrypted;
-// echo "<br>";
-// // Decrypt the $encrypted message.
-// $message   = Crypt::decrypt($encrypted);
-// echo $message;
-//         die;
+        return view('welcome');
+    }
 
- 
- return view ('login');
-}
+    public function Login()
+    {
+
+        return view('login');
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -47,38 +39,36 @@ public function Login()
         //
 
         $date = '2022-06-06';
-$data = Http::get('http://api.aladhan.com/v1/hijriCalendarByCity?city=Jhelum&country=Pakistan&method=2&month=11&year=2022')->json();
+        $data = Http::get('http://api.aladhan.com/v1/hijriCalendarByCity?city=Jhelum&country=Pakistan&method=2&month=11&year=2022')->json();
 
 
-echo $date;
-
-
-
-$content_array =  $data; 
+        echo $date;
 
 
 
-for($i=0;$i<=29;$i++){
+        $content_array =  $data;
 
 
-$selectedTime = $data['data'][$i]['timings']['Sunrise'];
-$ishraq= date('h:i',strtotime($selectedTime . ' +15 minutes'));
+
+        for ($i = 0; $i <= 29; $i++) {
 
 
-echo "<pre>";
-print_r( 'Fajr: '. $data['data'][$i]['timings']['Fajr'] ); // an associative array. 
-print_r( '<br>Sunrise: '.  $data['data'][$i]['timings']['Sunrise'] ); // an associative array. 
-print_r( '<br>Ishraq: '.  $ishraq ); // an associative array. 
-print_r( '<br>Dhuhr: '.  $data['data'][$i]['timings']['Dhuhr'] ); // an associative array. 
-print_r( '<br>Asr: '.  $data['data'][$i]['timings']['Asr'] ); // an associative array. 
-print_r( '<br>Maghrib: '.  $data['data'][$i]['timings']['Maghrib'] ); // an associative array. 
-print_r( '<br>Isha: '.  $data['data'][$i]['timings']['Isha'] ); // an associative array. 
-
-echo "<br>";
-}
+            $selectedTime = $data['data'][$i]['timings']['Sunrise'];
+            $ishraq = date('h:i', strtotime($selectedTime . ' +15 minutes'));
 
 
-}
+            echo "<pre>";
+            print_r('Fajr: ' . $data['data'][$i]['timings']['Fajr']); // an associative array.
+            print_r('<br>Sunrise: ' .  $data['data'][$i]['timings']['Sunrise']); // an associative array.
+            print_r('<br>Ishraq: ' .  $ishraq); // an associative array.
+            print_r('<br>Dhuhr: ' .  $data['data'][$i]['timings']['Dhuhr']); // an associative array.
+            print_r('<br>Asr: ' .  $data['data'][$i]['timings']['Asr']); // an associative array.
+            print_r('<br>Maghrib: ' .  $data['data'][$i]['timings']['Maghrib']); // an associative array.
+            print_r('<br>Isha: ' .  $data['data'][$i]['timings']['Isha']); // an associative array.
+
+            echo "<br>";
+        }
+    }
     /**
      * Store a newly created resource in storage.
      *
@@ -134,22 +124,21 @@ echo "<br>";
     {
         //
         return view('base64.base1');
-
     }
 
     public function base2(Request $request)
     {
 
-        
+
 
         $url = $request->signed;
 
-  $urlParts = pathinfo($url);
-    $extension = $urlParts['extension'];
-  
-  $base64 = 'data:image/' . $extension . ';base64,' . base64_encode(\Illuminate\Support\Facades\Http::get($url)->body());
+        $urlParts = pathinfo($url);
+        $extension = $urlParts['extension'];
 
-        
+        $base64 = 'data:image/' . $extension . ';base64,' . base64_encode(\Illuminate\Support\Facades\Http::get($url)->body());
+
+
 
         $folderPath = public_path('base64/');
 
@@ -167,7 +156,7 @@ echo "<br>";
 
         file_put_contents($file, $image_base64);
 
-       
+
 
 
         return back()->with('success', 'Form successfully submitted with signature');

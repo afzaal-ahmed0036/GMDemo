@@ -1,33 +1,6 @@
 @extends('template.top-head')
 @section('title', 'Create Voucher')
 @section('content')
-    @if (session('error'))
-        <div class="alert alert-{{ Session::get('class') }} p-1" id="success-alert">
-            <strong>{{ Session::get('error') }} </strong>
-        </div>
-    @endif
-    @if (session()->has('message'))
-        <div class="alert alert-success alert-dismissible text-center"><button type="button" class="close"
-                data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{!! session()->get('message') !!}
-        </div>
-    @endif
-    @if (session()->has('not_permitted'))
-        <div class="alert alert-danger alert-dismissible text-center"><button type="button" class="close"
-                data-dismiss="alert" aria-label="Close"><span
-                    aria-hidden="true">&times;</span></button>{{ session()->get('not_permitted') }}</div>
-    @endif
-    @if (count($errors) > 0)
-        <div>
-            <div class="alert alert-danger p-1 border-1 bg-danger text-white">
-                <p class="font-weight-bold"> There were some problems with your input.</p>
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
     <section class="forms pos-section">
         <div class="container-fluid">
             <div class="row">

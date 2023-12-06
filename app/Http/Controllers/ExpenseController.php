@@ -37,7 +37,7 @@ class ExpenseController extends Controller
             }
             return view('expense.expense', compact('pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public  function ExpenseCreate()
@@ -55,7 +55,7 @@ class ExpenseController extends Controller
             Session::put('VHNO', 'EXP-' . $vhno[0]->VHNO);
             return view('expense.expensecreate', compact('tax', 'items', 'vhno', 'supplier', 'pagetitle', 'item', 'user'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ExpenseSave(Request $request)
@@ -153,10 +153,10 @@ class ExpenseController extends Controller
                 }
             }
             DB::commit();
-            return redirect('Expense')->with('error', 'Expense Created Successfully')->with('class', 'success');
+            return redirect('Expense')->with('success', 'Expense Created Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage());
         }
     }
     public function ExpenseView($id)
@@ -166,14 +166,14 @@ class ExpenseController extends Controller
             $company = Company::first();
             $expense_master = DB::table('v_expense')->where('ExpenseMasterID', $id)->first();
             if(!$expense_master){
-                return back()->with('error', 'No Data Found')->with('class', 'danger');;
+                return back()->with('error', 'No Data Found');;
             }
             $expense_detail = DB::table('v_expense_detail')->where('ExpenseMasterID', $id)->get();
             $journal = Journal::where('ExpenseMasterID', $id)->get();
             return view('expense.expense_view', compact('expense_master', 'expense_detail', 'pagetitle', 'company'));
         } catch (\Exception $e) {
             // DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function  ExpenseEdit($id)
@@ -191,7 +191,7 @@ class ExpenseController extends Controller
             return view('expense.expense_edit', compact('tax', 'supplier', 'pagetitle', 'expense_master', 'chartofaccount', 'expense_detail'));
         } catch (\Exception $e) {
             // DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ExpenseUpdate(request $request)
@@ -270,10 +270,10 @@ class ExpenseController extends Controller
                 }
             }
             DB::commit();
-            return redirect('Expense')->with('error', 'Expense Updated Successfully')->with('class', 'success');
+            return redirect('Expense')->with('success', 'Expense Updated Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage());
         }
     }
     public function ExpenseDelete($id)
@@ -284,10 +284,10 @@ class ExpenseController extends Controller
             ExpenseDetail::where('ExpenseMasterID', $id)->delete();
             Journal::where('ExpenseMasterID', $id)->delete();
             DB::commit();
-            return redirect('Expense')->with('error', 'Deleted Successfully')->with('class', 'success');
+            return redirect('Expense')->with('success', 'Deleted Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ExpensePDF($id)
@@ -297,7 +297,7 @@ class ExpenseController extends Controller
             $company = Company::first();
             $expense_master = DB::table('v_expense')->where('ExpenseMasterID', $id)->first();
             if(!$expense_master){
-                return back()->with('error', 'No Data Found')->with('class', 'danger');;
+                return back()->with('error', 'No Data Found');;
             }
             $expense_detail = DB::table('v_expense_detail')->where('ExpenseMasterID', $id)->get();
             $journal = Journal::where('ExpenseMasterID', $id)->get();
@@ -306,7 +306,7 @@ class ExpenseController extends Controller
             return view('expense.expense_view', compact('expense_master', 'expense_detail', 'pagetitle', 'company'));
         } catch (\Exception $e) {
             // DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 }

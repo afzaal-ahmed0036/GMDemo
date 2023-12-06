@@ -77,8 +77,8 @@ $pagetitle = 'Company';
 
         $id = DB::table('company')->insertGetId($data);
 
- 
-        return redirect('Company' )->with('error', 'Save Successfully.')->with('class', 'success');
+
+        return redirect('Company' )->with('success', 'Save Successfully.');
     }
     public  function CompanyEdit($id)
     {
@@ -103,7 +103,7 @@ $pagetitle = 'Company';
             'Contact' => $request->Contact,
             'Address' => $request->Address,
             'Website' => $request->Website,
-           
+
             'DigitalSignature' => $request->input('DigitalSignature'),
             'EstimateInvoiceTitle' => $request->input('EstimateInvoiceTitle'),
             'SaleInvoiceTitle' => $request->input('SaleInvoiceTitle'),
@@ -111,7 +111,7 @@ $pagetitle = 'Company';
             'CreditNoteTitle' => $request->input('CreditNoteTitle'),
             'PurchaseInvoiceTitle' => $request->input('PurchaseInvoiceTitle'),
             'DebitNoteTitle' => $request->input('DebitNoteTitle'),
- 
+
         );
         $destinationPath = public_path('/documents');
 
@@ -137,13 +137,13 @@ $pagetitle = 'Company';
 
             $signature->move($destinationPath, $fileName2);
         }
-       
+
 
         $id = DB::table('company')->where('CompanyID', $request->input('CompanyID'))->update($data);
         $pagetitle = 'Company';
 
         $company = DB::table('company')->get();
-        return redirect('Company')->with('error', 'Save Successfully.')->with('class', 'success');
+        return redirect('Company')->with('success', 'Save Successfully.');
     }
     public  function CompanyDelete($id)
     {
@@ -152,6 +152,6 @@ $pagetitle = 'Company';
         $company = DB::table('company')->get();
 
         $id = DB::table('company')->where('CompanyID', $id)->delete();
-        return redirect('Company')->with('error', 'Deleted Successfully.')->with('class', 'success');
+        return redirect('Company')->with('success', 'Deleted Successfully.');
     }
 }

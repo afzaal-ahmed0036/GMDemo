@@ -11,9 +11,9 @@ use App\Models\DishRecipe;
 use App\Models\Unit;
 use App\Models\DishTable;
 use App\Models\InvoiceDishDetail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Image;
-use DB;
-use session;
 use Yajra\DataTables\DataTables;
 
 class DishController extends Controller
@@ -105,7 +105,7 @@ class DishController extends Controller
             $input['image_thumbnail'] = $imageName;
         }
         $dish = Dish::create($input);
-        return redirect()->route('dish.type', $dish->id)->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect()->route('dish.type', $dish->id)->with('success', 'Saved Successfully');
     }
 
     public function saveSingleDish(Request $request)
@@ -164,8 +164,8 @@ class DishController extends Controller
             }
         }
 
-        
-        return redirect()->route('dish.list')->with('error', 'Saved Successfully')->with('class', 'success');
+
+        return redirect()->route('dish.list')->with('success', 'Saved Successfully');
     }
 
     /**
@@ -220,25 +220,25 @@ class DishController extends Controller
             $input['image_thumbnail'] = $imageName;
         }
         $dish = Dish::find($id)->update($input);
-        return redirect()->route('dish.edit', $id)->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect()->route('dish.edit', $id)->with('success', 'Saved Successfully');
     }
 
     public function dishType(Dish $dish, $dish_type_id = null)
     {
         $dish_types = DishType::where('dish_id',$dish->id)->get();
-        
+
         $code = null;
         if($dish_type_id){
             $dish_type = $dish_types->firstWhere('id',$dish_type_id);
             if($dish_type->code){
                 $code = explode('-', $dish_type->code);
-                $code = $code[1];   
+                $code = $code[1];
             }
         }
         else{
             $dish_type = $dish_type_id;
         }
-             
+
         return view('dish.dish-type',compact('dish','dish_types','dish_type','code'));
     }
 
@@ -281,8 +281,8 @@ class DishController extends Controller
             $input['dish_id'] = $id;
             $dish_type = DishType::create($input);
         }
-        
-        return redirect()->route('dish.type', $id)->with('error', 'Saved Successfully')->with('class', 'success');
+
+        return redirect()->route('dish.type', $id)->with('success', 'Saved Successfully');
     }
 
     public function dishImage(Dish $dish)
@@ -316,7 +316,7 @@ class DishController extends Controller
             $input['image'] = $imageName;
         }
         DishImage::create($input);
-        return redirect()->route('dish.image', $id)->with('error', 'Saved Successfully')->with('class', 'success');
+        return redirect()->route('dish.image', $id)->with('success', 'Saved Successfully');
     }
 
     public function dishRecipe(Dish $dish, $dish_recipe_id = null)
@@ -325,7 +325,7 @@ class DishController extends Controller
         if($dish_recipe_id){
             $dish_type_recipe = DishRecipe::findOrFail($dish_recipe_id);
             $item = Item::where('ItemID',$dish_type_recipe->item_id)->first();
-            $item_unit = $item->unit; 
+            $item_unit = $item->unit;
         }
         else{
             $dish_type_recipe = $dish_recipe_id;
@@ -338,7 +338,7 @@ class DishController extends Controller
         foreach($dish_types as $dish_type)
         {
             $dish_recipes[$dish_type->type] = $dish_type->dish_recipe;
-        } 
+        }
         return view('dish.dish-recipe',compact('dish','dish_types','kitchen_items','dish_recipes','dish_type_recipe','item_unit'));
     }
 
@@ -365,8 +365,8 @@ class DishController extends Controller
             $input['dish_id'] = $id;
             DishRecipe::updateOrCreate(['dish_type_id' => $input['dish_type_id'],'item_id' => $input['item_id']],$input);
         }
-        
-        return redirect()->route('dish.recipe', $id)->with('error', 'Saved Successfully')->with('class', 'success');
+
+        return redirect()->route('dish.recipe', $id)->with('success', 'Saved Successfully');
     }
 
     public function getItemUnit($item_id)
@@ -376,7 +376,7 @@ class DishController extends Controller
         if(!empty($unit)){
             return $unit;
         }
-            
+
         return;
     }
 
@@ -384,7 +384,7 @@ class DishController extends Controller
     {
         $dish_type = DishType::find($id);
         $dish_type->delete();
-        return redirect()->back()->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect()->back()->with('success', 'Deleted Successfully');
     }
 
     public function deleteDishImage($id)
@@ -393,14 +393,14 @@ class DishController extends Controller
         $file_path = public_path().'/assets/images/dishes/'.$dish_image->image;
         unlink($file_path);
         $dish_image->delete();
-        return redirect()->back()->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect()->back()->with('success', 'Deleted Successfully');
     }
 
     public function deleteDishRecipe($id)
     {
         $dish_recipe = DishRecipe::find($id);
         $dish_recipe->delete();
-        return redirect()->back()->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect()->back()->with('success', 'Deleted Successfully');
     }
 
     /**
@@ -424,10 +424,10 @@ class DishController extends Controller
             $thumbnail_path = public_path().'/thumbnail/'.$dish->image_thumbnail;
             unlink($thumbnail_path);
         }
-        
+
 
         $dish->delete();
-        return redirect()->back()->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect()->back()->with('success', 'Deleted Successfully');
     }
 
     public function createDishOrder()
@@ -483,36 +483,36 @@ class DishController extends Controller
         $paying_method = 'Cash';
 
         $invoice_mst = array(
-          'InvoiceNo' => $invoice_no, 
-          'Date' => $today_date, 
-          'DueDate' => $today_date, 
-          'DishTableID' => $request->dish_table_id, 
-          'WalkinCustomerName' => $request->WalkinCustomerName, 
-          'ReferenceNo' => $reference_no, 
-          'PaymentMode' => $paying_method, 
-          // 'PaymentDetails' => $request->PaymentDetails, 
-          // 'Subject' => $request->Subject, 
-          'SubTotal' => $request->SubTotal, 
-          'DiscountPer' => $request->DiscountPer, 
-          'DiscountAmount' => $request->DiscountAmount, 
-          'Total' => $request->Total, 
-          'TaxPer' => $request->Taxpercentage, 
-          'Tax' => $request->grandtotaltax, 
-          'Shipping' => $request->Shipping, 
-          'GrandTotal' => $request->Grandtotal, 
-          'Paid' => $request->Grandtotal, 
-          'Balance' => $request->amountDue, 
-          // 'CustomerNotes' => $request->CustomerNotes,               
-          // 'DescriptionNotes' => $request->DescriptionNotes,               
-          'UserID' => session::get('UserID'), 
+          'InvoiceNo' => $invoice_no,
+          'Date' => $today_date,
+          'DueDate' => $today_date,
+          'DishTableID' => $request->dish_table_id,
+          'WalkinCustomerName' => $request->WalkinCustomerName,
+          'ReferenceNo' => $reference_no,
+          'PaymentMode' => $paying_method,
+          // 'PaymentDetails' => $request->PaymentDetails,
+          // 'Subject' => $request->Subject,
+          'SubTotal' => $request->SubTotal,
+          'DiscountPer' => $request->DiscountPer,
+          'DiscountAmount' => $request->DiscountAmount,
+          'Total' => $request->Total,
+          'TaxPer' => $request->Taxpercentage,
+          'Tax' => $request->grandtotaltax,
+          'Shipping' => $request->Shipping,
+          'GrandTotal' => $request->Grandtotal,
+          'Paid' => $request->Grandtotal,
+          'Balance' => $request->amountDue,
+          // 'CustomerNotes' => $request->CustomerNotes,
+          // 'DescriptionNotes' => $request->DescriptionNotes,
+          'UserID' => Session::get('UserID'),
         );
 
         $InvoiceMasterID = DB::table('invoice_master')->insertGetId($invoice_mst);
         $dish_types = $request->ItemID;
- 
+
 
         foreach ($dish_types as $key => $dish_type_id) {
-            $dish_type = DishType::findOrFail($dish_type_id);            
+            $dish_type = DishType::findOrFail($dish_type_id);
 
             $invoice_dish_detail = new InvoiceDishDetail();
             $invoice_dish_detail->invoice_master_id = $InvoiceMasterID;
@@ -527,8 +527,8 @@ class DishController extends Controller
             {
                 $item_name = DB::table('item')->where('ItemID', $dish_item->item_id)->pluck('ItemName')->first();
                 $invoice_det = array (
-                    'InvoiceMasterID' =>  $InvoiceMasterID, 
-                    'InvoiceNo' => $invoice_no, 
+                    'InvoiceMasterID' =>  $InvoiceMasterID,
+                    'InvoiceNo' => $invoice_no,
                     'dish_id' => $dish_type->dish_id,
                     'dish_type_id' => $dish_type_id,
                     'ItemID' => $dish_item->item_id,
@@ -538,15 +538,15 @@ class DishController extends Controller
                     // 'Tax' => $request->TaxVal[$key],
                     // 'Rate' => $request->Price[$key],
                     // 'Total' => $request->ItemTotal[$key],
-                
+
                 );
 
                 $id = DB::table('invoice_detail')->insertGetId($invoice_det);
             }
 
-            
+
         }
-        return redirect('create-dish-order')->with('error', 'Order Placed Successfully')->with('class', 'success');
+        return redirect('create-dish-order')->with('success', 'Order Placed Successfully');
     }
 
     public function dishInvoices(Request $request)
@@ -607,41 +607,41 @@ class DishController extends Controller
         $paying_method = 'Cash';
 
         $invoice_mst = array(
-          'InvoiceNo' => $invoice_no, 
-          'Date' => $today_date, 
-          'DueDate' => $today_date, 
-          'DishTableID' => $request->dish_table_id, 
-          'WalkinCustomerName' => $request->WalkinCustomerName, 
-          'ReferenceNo' => $reference_no, 
-          'PaymentMode' => $paying_method, 
-          // 'PaymentDetails' => $request->PaymentDetails, 
-          // 'Subject' => $request->Subject, 
-          'SubTotal' => $request->SubTotal, 
-          'DiscountPer' => $request->DiscountPer, 
-          'DiscountAmount' => $request->DiscountAmount, 
-          'Total' => $request->Total, 
-          'TaxPer' => $request->Taxpercentage, 
-          'Tax' => $request->grandtotaltax, 
-          'Shipping' => $request->Shipping, 
-          'GrandTotal' => $request->Grandtotal, 
-          'Paid' => $request->Grandtotal, 
-          'Balance' => $request->amountDue, 
-          // 'CustomerNotes' => $request->CustomerNotes,               
-          // 'DescriptionNotes' => $request->DescriptionNotes,               
-          'UserID' => session::get('UserID'), 
+          'InvoiceNo' => $invoice_no,
+          'Date' => $today_date,
+          'DueDate' => $today_date,
+          'DishTableID' => $request->dish_table_id,
+          'WalkinCustomerName' => $request->WalkinCustomerName,
+          'ReferenceNo' => $reference_no,
+          'PaymentMode' => $paying_method,
+          // 'PaymentDetails' => $request->PaymentDetails,
+          // 'Subject' => $request->Subject,
+          'SubTotal' => $request->SubTotal,
+          'DiscountPer' => $request->DiscountPer,
+          'DiscountAmount' => $request->DiscountAmount,
+          'Total' => $request->Total,
+          'TaxPer' => $request->Taxpercentage,
+          'Tax' => $request->grandtotaltax,
+          'Shipping' => $request->Shipping,
+          'GrandTotal' => $request->Grandtotal,
+          'Paid' => $request->Grandtotal,
+          'Balance' => $request->amountDue,
+          // 'CustomerNotes' => $request->CustomerNotes,
+          // 'DescriptionNotes' => $request->DescriptionNotes,
+          'UserID' => Session::get('UserID'),
         );
 
-      
+
         $InvoiceMst= DB::table('invoice_master')->where('InvoiceMasterID',$request->InvoiceMasterID)->update($invoice_mst);
 
         $invoice_detail = DB::table('invoice_detail')->where('InvoiceMasterID',$request->InvoiceMasterID)->delete();
         $invoice_dish_detail = InvoiceDishDetail::where('invoice_master_id',$request->InvoiceMasterID)->delete();
 
         $dish_types = $request->ItemID;
- 
+
 
         foreach ($dish_types as $key => $dish_type_id) {
-            $dish_type = DishType::findOrFail($dish_type_id);            
+            $dish_type = DishType::findOrFail($dish_type_id);
 
             $invoice_dish_detail = new InvoiceDishDetail();
             $invoice_dish_detail->invoice_master_id = $request->InvoiceMasterID;
@@ -656,8 +656,8 @@ class DishController extends Controller
             {
                 $item_name = DB::table('item')->where('ItemID', $dish_item->item_id)->pluck('ItemName')->first();
                 $invoice_det = array (
-                    'InvoiceMasterID' =>  $request->InvoiceMasterID, 
-                    'InvoiceNo' => $invoice_no, 
+                    'InvoiceMasterID' =>  $request->InvoiceMasterID,
+                    'InvoiceNo' => $invoice_no,
                     'dish_id' => $dish_type->dish_id,
                     'dish_type_id' => $dish_type_id,
                     'ItemID' => $dish_item->item_id,
@@ -667,15 +667,15 @@ class DishController extends Controller
                     // 'Tax' => $request->TaxVal[$key],
                     // 'Rate' => $request->Price[$key],
                     // 'Total' => $request->ItemTotal[$key],
-                
+
                 );
 
                 $id = DB::table('invoice_detail')->insertGetId($invoice_det);
             }
 
-            
+
         }
-        return redirect('invoice-dish-listing')->with('error', 'Order Updated Successfully')->with('class', 'success');
+        return redirect('invoice-dish-listing')->with('success', 'Order Updated Successfully');
     }
-    
+
 }

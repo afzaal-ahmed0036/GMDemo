@@ -31,9 +31,9 @@ class ItemsController extends Controller
             $supplier = Supplier::all();
             $lims_pos_setting_data = PosSetting::latest()->first();
 
-            return view('item', compact('pagetitle', 'item', 'lims_warehouse_list', 'supplier', 'lims_pos_setting_data'));
+            return view('item.item', compact('pagetitle', 'item', 'lims_warehouse_list', 'supplier', 'lims_pos_setting_data'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public  function ItemCreate()
@@ -51,9 +51,9 @@ class ItemsController extends Controller
             // $chartofaccount = DB::table('chartofaccount')->where(DB::raw('right(ChartOfAccountID,4)'), 00000)->where(DB::raw('right(ChartOfAccountID,5)'), '!=', 00000)->get();
 
             // return view('item_create', compact('pagetitle', 'item', 'chartofaccount', 'units', 'lims_warehouse_list', 'item_categories', 'lims_brand_all', 'supplier', 'lims_pos_setting_data'));
-            return view('item_create', compact('pagetitle', 'units', 'item_categories', 'lims_brand_all'));
+            return view('item.item_create', compact('pagetitle', 'units', 'item_categories', 'lims_brand_all'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public  function ItemSave(request $request)
@@ -62,7 +62,7 @@ class ItemsController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(Session::get('UserID'), 'Item/Inventory', 'List / Create');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             // dd($request->all());
@@ -153,7 +153,7 @@ class ItemsController extends Controller
             //     $subTotal = $price * $quantity;
             //     if ($request->Taxable == 'Yes') {
             //         if ($request->Percentage == null) {
-            //             return redirect()->back()->withinput($request->all())->with('error', 'The Taxable Percentage is required if Taxable is set to Yes')->with('class', 'danger');
+            //             return redirect()->back()->withinput($request->all())->with('error', 'The Taxable Percentage is required if Taxable is set to Yes');
             //         } else {
             //             $tax = floatval((trim($request->Percentage) / 100) * $subTotal);
             //             $grandTotal = floatval($subTotal + $tax);
@@ -201,10 +201,10 @@ class ItemsController extends Controller
             //     InvoiceDetail::create($invoice_det);
             // }
             DB::commit();
-            return redirect('Item')->with('error', 'Save Successfully.')->with('class', 'success');
+            return redirect('Item')->with('success', 'ItemSave Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage());
         }
     }
 
@@ -228,7 +228,7 @@ class ItemsController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(Session::get('UserID'), 'Item/Inventory', 'Update');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             Session::put('menu', 'Item');
@@ -244,10 +244,10 @@ class ItemsController extends Controller
             // $lims_warehouse_list = Warehouse::where('is_active', true)->get();
             // $supplier = DB::table('supplier')->get();
 
-            return view('item_edit', compact('pagetitle', 'item', 'categories', 'lims_brand_list', 'units',));
+            return view('item.item_edit', compact('pagetitle', 'item', 'categories', 'lims_brand_list', 'units',));
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ItemUpdate(request $request)
@@ -257,7 +257,7 @@ class ItemsController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(session::get('UserID'), 'Item/Inventory', 'Update');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             $request->validate(
@@ -318,10 +318,10 @@ class ItemsController extends Controller
             );
             Item::where('ItemID', $request->input('ItemID'))->update($data);
             DB::commit();
-            return redirect('Item')->with('error', 'Updated Successfully.')->with('class', 'success');
+            return redirect('Item')->with('success', 'Updated Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->withinput($request->all())->with('error', $e->getMessage());
         }
     }
     public  function ItemDelete($id)
@@ -330,15 +330,15 @@ class ItemsController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(session::get('UserID'), 'Item/Inventory', 'Delete');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
             Item::where('ItemID', $id)->delete();
-            return redirect('Item')->with('error', 'Deleted Successfully')->with('class', 'success');
+            return redirect('Item')->with('success', 'Deleted Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -430,12 +430,12 @@ class ItemsController extends Controller
                 );
                 DB::commit();
                 InvoiceDetail::create($invoice_det);
-                return back()->with('error', 'Item Quantity Added Successfully')->with('class', 'success');
+                return back()->with('success', 'Item Quantity Added Successfully');
             }
         } catch (\Exception $e) {
             // dd($e->getMessage());
             DB::rollBack();
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
 
             //throw $th;
         }

@@ -2,47 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Session;
+use Illuminate\Support\Facades\Session;
 use Yajra\DataTables\DataTables;
-
-use PDF;
 class EstimateController extends Controller
 {
     public function Estimate()
   {
-    
+
     $pagetitle = 'All Delivery Challans';
     return view('estimate.estimate', compact('pagetitle'));
   }
-   
+
 
   public function ajax_estimate(Request $request)
   {
-    session::put('menu', 'Vouchers');
+    Session::put('menu', 'Vouchers');
     $pagetitle = 'Delivery Challan';
     if ($request->ajax()) {
       $data = DB::table('v_estimate_master')->orderBy('EstimateMasterID')->get();
-     
+
       return Datatables::of($data)
         ->addIndexColumn()
         ->addColumn('action', function ($row) {
           // if you want to use direct link instead of dropdown use this line below
           // <a href="javascript:void(0)"  onclick="edit_data('.$row->customer_id.')" >Edit</a> | <a href="javascript:void(0)"  onclick="del_data('.$row->customer_id.')"  >Delete</a>
-          $btn = ' 
- 
+          $btn = '
+
                        <div class="d-flex align-items-center col-actions">
-                     
- 
-                <a href="' . URL('/EstimateView/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-eye-outline align-middle me-1 text-secondary"></i></a> 
-                <a href="' . URL('/EstimateEdit/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-pencil align-middle me-1 text-secondary"></i></a> 
-                <a  target="_blank" href="' . URL('/EstimateViewPDF/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-file-pdf-outline align-middle me-1 text-secondary"></i></a> 
-                 <a href="' . URL('/EstimateDelete/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-trash-can-outline align-middle me-1 text-secondary"></i></a> 
-                        
-                          
- 
-                      
+
+
+                <a href="' . URL('/EstimateView/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-eye-outline align-middle me-1 text-secondary"></i></a>
+                <a href="' . URL('/EstimateEdit/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-pencil align-middle me-1 text-secondary"></i></a>
+                <a  target="_blank" href="' . URL('/EstimateViewPDF/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-file-pdf-outline align-middle me-1 text-secondary"></i></a>
+                 <a href="' . URL('/EstimateDelete/' . $row->EstimateMasterID) . '"><i class="font-size-18 mdi mdi-trash-can-outline align-middle me-1 text-secondary"></i></a>
+
+
+
+
                        </div>';
 
           //class="edit btn btn-primary btn-sm"
@@ -56,14 +55,14 @@ class EstimateController extends Controller
     return view('estimate.estimate', 'pagetitle');
   }
 
-   
+
   public function EstimateCreate()
   {
-    
+
         // dd('reached');
         $pagetitle = 'Create Estimate';
         $party = DB::table('party')->get();
-    
+
         $items = DB::table('item')->get();
         $item = json_encode($items);
         // dd($item);
@@ -74,16 +73,16 @@ class EstimateController extends Controller
           ->get();
 
          $tax = DB::table('tax')->where('Section','Estimate')->get();
- 
+
         $challan_type = DB::table('challan_type')->get();
         $invoice_type = DB::table('invoice_type')->get();
         return view('estimate.estimate_create', compact('chartofacc', 'party', 'pagetitle', 'estimate_master', 'items', 'item', 'challan_type', 'user','invoice_type','tax'));
-      
+
   }
 
   public  function EstimateSave(request $request)
   {
-     
+
     $challan_mst = array(
       'EstimateNo' => $request->input('EstimateNo'),
       'PartyID' => $request->input('PartyID'),
@@ -106,7 +105,7 @@ class EstimateController extends Controller
       'GrandTotal' => $request->input('Grandtotal'),
       'CustomerNotes' => $request->input('CustomerNotes'),
       'DescriptionNotes' => $request->input('DescriptionNotes'),
-      'UserID' => session::get('UserID'),
+      'UserID' => Session::get('UserID'),
     );
     // dd($challan_mst);
     // $id= DB::table('')->insertGetId($data);
@@ -141,11 +140,11 @@ class EstimateController extends Controller
     // end foreach
 
     // dd('hello');
-    return redirect('Estimate')->with('error', 'Challan Saved')->with('class', 'success');
+    return redirect('Estimate')->with('success', 'Challan Saved');
   }
 
 
-  
+
 
 
 
@@ -159,7 +158,7 @@ class EstimateController extends Controller
 
 
 
-    return redirect('Estimate')->with('error', 'Deleted Successfully')->with('class', 'success');
+    return redirect('Estimate')->with('success', 'Deleted Successfully');
   }
 
 
@@ -171,10 +170,10 @@ class EstimateController extends Controller
     $estimate = DB::table('v_estimate_master')->where('EstimateMasterID', $id)->get();
     $estimate_detail = DB::table('v_estimate_detail')->where('EstimateMasterID', $id)->get();
     $company = DB::table('company')->get();
-    
-    session()->forget('VHNO');
 
-    session::put('VHNO',$estimate[0]->EstimateNo);
+    Session::forget('VHNO');
+
+    Session::put('VHNO',$estimate[0]->EstimateNo);
 
 
 
@@ -217,14 +216,14 @@ class EstimateController extends Controller
     // dd($estimate_detail);
 
 
-    
+
     return view('estimate.estimate_edit', compact('chartofacc', 'party', 'pagetitle', 'estimate_master', 'items', 'item',  'user',  'estimate_detail','tax'));
   }
 
 
   public  function EstimateUpdate(request $request)
   {
- 
+
      $estimate_mst = array(
       'EstimateNo' => $request->input('EstimateNo'),
       'PartyID' => $request->input('PartyID'),
@@ -246,7 +245,7 @@ class EstimateController extends Controller
       'Grandtotal' => $request->input('Grandtotal'),
       'CustomerNotes' => $request->input('CustomerNotes'),
       'DescriptionNotes' => $request->input('DescriptionNotes'),
-      'UserID' => session::get('UserID'),
+      'UserID' => Session::get('UserID'),
     );
 
 
@@ -262,7 +261,7 @@ class EstimateController extends Controller
 
 
     $EstimateMasterID=$request->EstimateMasterID;
-     
+
   // dd($ChallanMasterID);
     // when full payment is made
 
@@ -288,15 +287,15 @@ class EstimateController extends Controller
         'DiscountAmountItem' => $request->DiscountAmountItem[$i],
 
       );
-      
+
       $id = DB::table('estimate_detail')->insertGetId($estimate_detail);
-      
+
     }
 
 
     // end foreach
 
 
-    return redirect('Estimate')->with('error', 'Challan Saved')->with('class', 'success');
+    return redirect('Estimate')->with('success', 'Challan Saved');
   }
 }

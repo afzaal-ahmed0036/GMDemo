@@ -22,7 +22,7 @@ class DataController extends Controller
             $pagetitle = 'sale report';
             return view('sale_report', compact('pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -39,7 +39,7 @@ class DataController extends Controller
                 ->get();
             return view('sale_report1', compact('v_invoice_profit', 'pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function saleReportPDF(Request $request)
@@ -58,7 +58,7 @@ class DataController extends Controller
             $pdf->setpaper('A4', 'portiate');
             return $pdf->stream();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -72,10 +72,10 @@ class DataController extends Controller
             $items = Item::all();
             // dd($drivers);
 
-            return view('item_sale_report', compact('pagetitle', 'items'));
+            return view('item.item_sale_report', compact('pagetitle', 'items'));
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            // dd($e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ItemSaleReportPDF(Request $request)
@@ -132,12 +132,12 @@ class DataController extends Controller
             })->sum();
             $remaining_stock = $P_sum - $S_sum;
 
-            $pdf = PDF::loadView('item_sale_report_pdf', compact('purchases', 'sales', 'pagetitle', 'company', 'item_name', 'item_code', 'item_cost', 'remaining_stock'));
+            $pdf = PDF::loadView('item.item_sale_report_pdf', compact('purchases', 'sales', 'pagetitle', 'company', 'item_name', 'item_code', 'item_cost', 'remaining_stock'));
             $pdf->setpaper('A4', 'portiate');
             return $pdf->stream();
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            // dd($e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ItemSaleReport1(Request $request)
@@ -193,10 +193,10 @@ class DataController extends Controller
             })->sum();
             $remaining_stock = $P_sum - $S_sum;
             // dd($sum);
-            return view('item_sale_report_view', compact('purchases', 'sales', 'pagetitle', 'company', 'item_name', 'item_code', 'item_cost', 'remaining_stock'));
+            return view('item.item_sale_report_view', compact('purchases', 'sales', 'pagetitle', 'company', 'item_name', 'item_code', 'item_cost', 'remaining_stock'));
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            // dd($e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     function ExpenseReport()
@@ -208,7 +208,7 @@ class DataController extends Controller
             $pagetitle = 'Expense';
             return view('expense.expense_report', compact('pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ExpenseReport1(request $request)
@@ -223,7 +223,7 @@ class DataController extends Controller
                 ->get();
             return View('expense.expense_report1', compact('expense_detail', 'pagetitle', 'company'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function ExpenseReportPDF(Request $request)
@@ -240,7 +240,7 @@ class DataController extends Controller
             $pdf->setpaper('A4', 'portiate');
             return $pdf->stream();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function VatReport(){
@@ -269,13 +269,13 @@ class DataController extends Controller
             //throw $th;
             // dd('here');
             // DB::rollBack();
-            return back()->with('message', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
         // dd($request->all());
     }
     public function ItemsPurchaseReport()
     {
         $items = Item::all();
-        return view('item_purchase_report_view', compact('items'));
+        return view('item.item_purchase_report_view', compact('items'));
     }
 }

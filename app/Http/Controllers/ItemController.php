@@ -7,15 +7,11 @@ use App\Models\InvoiceDetail;
 use App\Models\InvoiceItemAdditional;
 use App\Models\InvoiceMaster;
 use App\Models\Item;
-use App\Models\Journal;
-use App\Models\Payment;
 use App\Models\TempInvoiceDetail;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-use PDF;
 
 class ItemController extends Controller
 {
@@ -78,10 +74,8 @@ class ItemController extends Controller
         } catch (\Exception $e) {
             //throw $th;
             DB::rollBack();
-            // dd($e->getMessage());
             return response()->json(['error' => $e->getMessage()]);
 
-            // dd("error");
         }
     }
     public function getItemAdditional($id, $invoice_number)
@@ -120,10 +114,7 @@ class ItemController extends Controller
             return $pdf->stream();
             // return view('teq-invoice.dailyTransactions', compact('invoice_masters'));
         } catch (\Exception $e) {
-            //throw $th;
-            // dd('here');
-            // DB::rollBack();
-            return back()->with('message', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
     public function searchItem($code)
@@ -140,5 +131,5 @@ class ItemController extends Controller
         // dd($invoice_detail);
         return response()->json(['message' => 'done']);
     }
-    
+
 }

@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Image;
-use DB;
-use session;
 use Yajra\DataTables\DataTables;
 use App\Models\Appointment;
 use App\Models\Client;
@@ -17,6 +15,7 @@ use App\Models\Item;
 use App\Models\SalePerson;
 use App\Models\Party;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -92,7 +91,7 @@ class AppointmentController extends Controller
             }
         }
         //  $appointment->services()->sync($request->input('services', []));
-        return redirect()->route('appointments.create')->with('error', 'Save Successfully.')->with('class', 'success');
+        return redirect()->route('appointments.create')->with('success', 'Save Successfully.');
     }
 
 
@@ -111,13 +110,13 @@ class AppointmentController extends Controller
     {
         $appointment->update($request->all());
         $appointment->services()->sync($request->input('services', []));
-        return redirect()->back()->with('error', 'Updated Successfully.')->with('class', 'success');
+        return redirect()->back()->with('success', 'Updated Successfully.');
     }
 
     public function massDestroy($id)
     {
         Appointment::where('id', $id)->delete();
-        return redirect()->route('appointments.index')->with('error', 'Deleted Successfully.')->with('class', 'success');
+        return redirect()->route('appointments.index')->with('success', 'Deleted Successfully.');
     }
 
 
@@ -150,7 +149,7 @@ class AppointmentController extends Controller
                 'url'       => route('appointments.edit', $appointment->id),
                 'className' => $className
             ];
-        } 
+        }
         $pagetitle = 'Appointments On Full Calendar';
         return view('appointments.calendar', compact('events', 'pagetitle'));
     }

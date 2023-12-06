@@ -7,11 +7,11 @@ use App\Models\PurchaseOrderDetail;
 use App\Models\PurchaseOrderMaster;
 use App\Models\Supplier;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Yajra\DataTables\DataTables;
-use PDF;
 
 class PurchaseController extends Controller
 {
@@ -48,7 +48,7 @@ class PurchaseController extends Controller
             $item = json_encode($items);
             return view('ebooks.po_create', compact('vhno', 'supplier', 'user', 'items', 'item', 'tax', 'pagetitle'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -91,11 +91,11 @@ class PurchaseController extends Controller
                 PurchaseOrderDetail::create($purchase_det);
             }
             DB::commit();
-            return redirect('PurchaseOrder')->with('error', 'Purchase Order Created')->with('class', 'success');
+            return redirect('PurchaseOrder')->with('success', 'Purchase Order Created');
         } catch (\Exception $e) {
             DB::rollBack();
             // dd($e->getMessage());
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -120,7 +120,7 @@ class PurchaseController extends Controller
 
             return view('ebooks.po_edit', compact('supplier', 'user', 'purchaseorder_master', 'purchaseorder_detail', 'items', 'tax', 'pagetitle', 'item'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -166,9 +166,9 @@ class PurchaseController extends Controller
 
                 $id = DB::table('purchase_order_detail')->insertGetId($purchase_det);
             }
-            return redirect('PurchaseOrder')->with('error', 'Order Updated')->with('class', 'success');
+            return redirect('PurchaseOrder')->with('success', 'Order Updated');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -188,7 +188,7 @@ class PurchaseController extends Controller
             $company = DB::table('company')->get();
             return view('ebooks.purchaseorder_view', compact('purchaseorder_master',  'purchaseorder_detail', 'company'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -206,7 +206,7 @@ class PurchaseController extends Controller
             $pdf->setpaper('A4', 'portiate');
             return $pdf->stream();
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
     function PurchaseOrderDelete($PurchaseMasterid)
@@ -214,9 +214,9 @@ class PurchaseController extends Controller
         try {
             $id = DB::table('purchase_order_master')->where('PurchaseOrderMasterID', $PurchaseMasterid)->delete();
             $id2 = DB::table('purchase_order_detail')->where('PurchaseOrderMasterID', $PurchaseMasterid)->delete();
-            return redirect('PurchaseOrder')->with('error', 'Purchase Order Deleted')->with('class', 'success');
+            return redirect('PurchaseOrder')->with('success', 'Purchase Order Deleted');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage())->with('class', 'danger');
+            return back()->with('error', $e->getMessage());
         }
     }
 }

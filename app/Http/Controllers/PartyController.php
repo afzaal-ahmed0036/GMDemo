@@ -15,7 +15,7 @@ class PartyController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(Session::get('UserID'), 'Supplier', 'Delete');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             Session::put('menu', 'Party');
@@ -23,7 +23,7 @@ class PartyController extends Controller
             $supplier = Party::with('invoiceMaster')->get();
             return view('party', compact('pagetitle', 'supplier'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -33,7 +33,7 @@ class PartyController extends Controller
             $pagetitle = 'Create Party';
             return view('create_party', compact('pagetitle'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -44,7 +44,7 @@ class PartyController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(Session::get('UserID'), 'Party / Customers', 'List / Create');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             $this->validate(
@@ -71,10 +71,10 @@ class PartyController extends Controller
             // $id = DB::table('party')->insertGetId($data);
             Party::create($data);
             DB::commit();
-            return redirect('Parties')->with('error', 'Save Successfully.')->with('class', 'success');
+            return redirect('Parties')->with('success', 'Save Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger')->withInput();
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
             //throw $th;
         }
     }
@@ -84,7 +84,7 @@ class PartyController extends Controller
             ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
             $allow = check_role(Session::get('UserID'), 'Party / Customers', 'Update');
             if ($allow[0]->Allow == 'N') {
-                return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+                return redirect()->back()->with('error', 'You access is limited');
             }
             ////////////////////////////END SCRIPT ////////////////////////////////////////////////
             Session::put('menu', 'Party');
@@ -94,7 +94,7 @@ class PartyController extends Controller
 
             return view('party_edit', compact('pagetitle', 'supplier'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
             //throw $th;
         }
     }
@@ -103,7 +103,7 @@ class PartyController extends Controller
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
         $allow = check_role(Session::get('UserID'), 'Party / Customers', 'Update');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
         $this->validate(
@@ -139,19 +139,19 @@ class PartyController extends Controller
 
 
 
-        return redirect('Parties')->with('error', 'Updated Successfully.')->with('class', 'success');
+        return redirect('Parties')->with('success', 'Updated Successfully.');
     }
     public  function PartiesDelete($id)
     {
         ///////////////////////USER RIGHT & CONTROL ///////////////////////////////////////////
         $allow = check_role(Session::get('UserID'), 'Party / Customers', 'Delete');
         if ($allow[0]->Allow == 'N') {
-            return redirect()->back()->with('error', 'You access is limited')->with('class', 'danger');
+            return redirect()->back()->with('error', 'You access is limited');
         }
         ////////////////////////////END SCRIPT ////////////////////////////////////////////////
 
 
         $id = DB::table('party')->where('PartyID', $id)->delete();
-        return redirect('Parties')->with('error', 'Deleted Successfully')->with('class', 'success');
+        return redirect('Parties')->with('success', 'Deleted Successfully');
     }
 }

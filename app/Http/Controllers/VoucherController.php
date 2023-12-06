@@ -112,7 +112,7 @@ class VoucherController extends Controller
             $dish_tables = DishTable::orderBy('id')->get();
             return view('teq-invoice.voucher', compact('lims_customer_list', 'lims_customer_group_all', 'lims_warehouse_list', 'lims_product_list', 'product_number', 'lims_tax_list', 'lims_biller_list', 'lims_pos_setting_data', 'lims_brand_list', 'lims_category_list', 'recent_sale', 'recent_draft', 'lims_coupon_list', 'flag', 'invoice_no', 'dishes', 'dish_tables', 'resturantItems'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage())->with('class', 'danger');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
     public function storeVoucher(Request $request)
@@ -169,7 +169,7 @@ class VoucherController extends Controller
                     $data['cash_register_id'] = $cash_register_data->id;
                 } else {
                     DB::rollBack();
-                    return redirect('/')->with('error', 'You are not logged in, Login to Continue using the System')->with('class', 'danger');
+                    return redirect('/')->with('error', 'You are not logged in, Login to Continue using the System');
                 }
                 $data['user_id'] = Session::get('UserID');
                 if ($data['pos']) {
@@ -561,23 +561,23 @@ class VoucherController extends Controller
                     $message .= ' Sale created successfully';
 
                 if ($data['sale_status'] == 3 && $data['print_status'] == '1')
-                    return redirect(route('voucher.print', ['id' => $lims_sale_data, 'GiftInvoice' => $request->GiftInvoice]))->with('message', $message);
+                    return redirect(route('voucher.print', ['id' => $lims_sale_data, 'GiftInvoice' => $request->GiftInvoice]))->with('success', $message);
 
                 elseif ($data['sale_status'] == '1' && $data['print_status'] == '1')
-                    return redirect(route('voucher.print', ['id' => $lims_sale_data, 'GiftInvoice' => $request->GiftInvoice]))->with('message', $message);
+                    return redirect(route('voucher.print', ['id' => $lims_sale_data, 'GiftInvoice' => $request->GiftInvoice]))->with('success', $message);
 
                 elseif ($data['sale_status'] == '1' && $data['print_status'] == '0')
-                    return redirect(route('voucher.create'))->with('message', $message);
+                    return redirect(route('voucher.create'))->with('success', $message);
                 else
-                    return redirect()->back()->with('message', $message);
+                    return redirect()->back()->with('success', $message);
             } catch (\Exception $e) {
                 // dd($e->getMessage());
                 DB::rollBack();
 
-                return redirect()->back()->withinput($request->all())->with('error', $e->getMessage())->with('class', 'danger');
+                return redirect()->back()->withinput($request->all())->with('error', $e->getMessage());
             }
         } else {
-            return redirect('/')->with('error', 'You are Logged Out, Login to continue using the System')->with('class', 'danger');
+            return redirect('/')->with('error', 'You are Logged Out, Login to continue using the System');
         }
     }
     protected function payment($data, $updateInvoice = false)
@@ -850,10 +850,10 @@ class VoucherController extends Controller
             }
             DB::commit();
             TempInvoiceDetail::truncate();
-            return redirect('print-voucher/' . $request->invoice_master_id)->with('message', 'Data Updated Successfully');
+            return redirect('print-voucher/' . $request->invoice_master_id)->with('success', 'Data Updated Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('message', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
     public function addPartialPayment(Request $request)
@@ -1030,10 +1030,10 @@ class VoucherController extends Controller
             }
             DB::commit();
             TempInvoiceDetail::truncate();
-            return redirect('print-voucher/' . $request->invoice_master_id)->with('message', 'Data Updated Successfully');
+            return redirect('print-voucher/' . $request->invoice_master_id)->with('success', 'Data Updated Successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('message', $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 }
