@@ -297,7 +297,7 @@
                             <th style="text-align:right">
                                 <?php echo($due_amount)?></th>
                         </tr>
-                        <tr>
+                        {{-- <tr>
                             @if (@$general_setting->currency_position == 'prefix')
                                 <th class="centered" colspan="6">{{ trans('file.In Words') }}:
                                     <span>{{ config('currency') }}</span>
@@ -307,7 +307,7 @@
                                     <span>{{ str_replace('-', ' ', $numberInWords) }}</span>
                                     <span>{{ config('currency') }}</span></th>
                             @endif
-                        </tr>
+                        </tr> --}}
                     </tbody>
                     <!-- </tfoot> -->
                 </table>

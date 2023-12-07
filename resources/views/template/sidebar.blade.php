@@ -78,7 +78,7 @@
                         <li> <a href="{{ URL('/Bill') }}" key="t-products">Purchase Invoice</a></li>
                         <li> <a href="{{ URL('/Expense') }}" key="t-products">Expense</a></li>
 
-                        {{-- <li> <a href="{{URL('/Supplier')}}" key="t-products">Vendors</a></li> --}}
+                        <li> <a href="{{URL('/Supplier')}}" key="t-products">Vendors</a></li>
 
                         {{-- <li> <a href="{{URL('/PurchaseOrder')}}" key="t-products">Purchase Invoice</a></li> --}}
                         {{-- <li> <a href="{{URL('/PurchasePayment')}}" key="t-products">Payments Made</a></li> --}}

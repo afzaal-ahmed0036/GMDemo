@@ -36,7 +36,9 @@ use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\DataController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PartyController;
+use App\Http\Controllers\SupplierController;
 
 Route::get('/base1/', [KM::class, 'base1']);
 Route::post('/base2/', [KM::class, 'base2']);
@@ -97,11 +99,11 @@ Route::group(['middleware' => ['CheckAdmin']], function () {
 
 
 
-    Route::get('/Supplier', [Accounts::class, 'Supplier']);
-    Route::post('/SaveSupplier', [Accounts::class, 'SaveSupplier']);
-    Route::get('/SupplierEdit/{id}', [Accounts::class, 'SupplierEdit']);
-    Route::post('/SupplierUpdate/', [Accounts::class, 'SupplierUpdate']);
-    Route::get('/SupplierDelete/{id}', [Accounts::class, 'SupplierDelete']);
+    Route::get('/Supplier', [SupplierController::class, 'Supplier']);
+    Route::post('/SaveSupplier', [SupplierController::class, 'SaveSupplier']);
+    Route::get('/SupplierEdit/{id}', [SupplierController::class, 'SupplierEdit']);
+    Route::post('/SupplierUpdate/', [SupplierController::class, 'SupplierUpdate']);
+    Route::get('/SupplierDelete/{id}', [SupplierController::class, 'SupplierDelete']);
 
 
     Route::get('/Parties', [PartyController::class, 'Parties']);
@@ -541,12 +543,12 @@ Route::group(['middleware' => ['CheckAdmin']], function () {
 
 
 
-    Route::get('/show-invoice/{id}', [PosController::class, 'showInvoice'])->name('invoice.show');
+    Route::get('/show-invoice/{id}', [InvoiceController::class, 'showInvoice'])->name('invoice.show');
     Route::get('/print-invoice/{id}', [PosController::class, 'printInvoice'])->name('invoice.print');
-    Route::get('/print-voucher/{id}/{GiftInvoice?}', [PosController::class, 'printVoucher'])->name('voucher.print');
+    Route::get('/print-voucher/{id}/{GiftInvoice?}', [InvoiceController::class, 'printVoucher'])->name('voucher.print');
 
-    Route::get('/invoice-listing', [PosController::class, 'invoiceListing'])->name('invoice.listing');
-    Route::get('/cancelled-orders', [PosController::class, 'cancelledInvoiceListing'])->name('invoice.cancelled.listing');
+    Route::get('/invoice-listing', [InvoiceController::class, 'invoiceListing'])->name('invoice.listing');
+    Route::get('/cancelled-orders', [InvoiceController::class, 'cancelledInvoiceListing'])->name('invoice.cancelled.listing');
 
 
 
