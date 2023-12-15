@@ -333,11 +333,7 @@
                 }, {
                     name: 'Expense',
                     data: [
-
                         @foreach ($cash1 as $value)
-
-
-
                             {{ $value->Exp }},
                         @endforeach
 

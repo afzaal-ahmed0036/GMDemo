@@ -4531,8 +4531,6 @@ class Accounts extends Controller
     {
         $role = DB::table('user_role')->where('UserID', $UserID)->get();
         if (count($role) > 0) {
-
-
             return redirect('RoleView/' . $UserID)->with('success', '$2 updated Successfully');
         } else {
 
